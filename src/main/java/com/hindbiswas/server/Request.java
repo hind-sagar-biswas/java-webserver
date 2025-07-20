@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -14,19 +15,20 @@ public class Request {
     public final String method;
     public final String path;
     public final String version;
+    public final Map<String, String> body;
     public final Map<String, String> params;
     public final Map<String, String> headers;
-    public String body;
+    private int contentLength;
 
-    public Request(String method, String path, String version, Map<String, String> headers, String body) {
+    public Request(String method, String path, String version, Map<String, String> headers, Map<String, String> body) {
         String[] pathParts = path.split("\\?", 2);
 
         this.method = method;
         this.path = pathParts[0];
         this.version = version;
         this.headers = headers;
-        this.params = pathParts.length > 1 ? parseParams(pathParts[1]) : new java.util.HashMap<>();
-        this.body = body;
+        this.params = pathParts.length > 1 ? parseParams(pathParts[1]) : new HashMap<>();
+        this.body = body != null ? body : new HashMap<>();
     }
 
     public Request(BufferedReader reader) throws IOException {
@@ -44,21 +46,68 @@ public class Request {
         this.headers = parseHeaders(reader);
 
         // Parse query parameters
-        this.params = pathParts.length > 1 ? parseParams(pathParts[1]) : new java.util.HashMap<>();
+        this.params = pathParts.length > 1 ? parseParams(pathParts[1]) : new HashMap<>();
+
+        // Parse body
+        if (headers.containsKey("content-length")) {
+            this.body = parseBody(reader);
+        } else {
+            this.body = new HashMap<>();
+        }
     }
 
     private Map<String, String> parseHeaders(BufferedReader reader) throws IOException {
-        Map<String, String> headers = new java.util.HashMap<>();
+        Map<String, String> headers = new HashMap<>();
         String line;
         while ((line = reader.readLine()) != null && !line.isEmpty()) {
-            String[] kv = line.split(":", 2);
-            headers.put(kv[0].trim(), kv[1].trim());
+            String[] parts = line.split(":", 2);
+            if (parts.length == 2) {
+                String name = parts[0].trim().toLowerCase();
+                String value = parts[1].trim();
+
+                headers.put(name, value);
+
+                if (name.equals("content-length")) {
+                    contentLength = Integer.parseInt(value);
+                }
+            }
         }
         return headers;
     }
 
+    private Map<String, String> parseBody(BufferedReader reader) throws IOException {
+        char[] buffer = new char[contentLength];
+        int read = reader.read(buffer);
+        String body = new String(buffer, 0, read);
+
+        String contentType = headers.get("content-type");
+        if (contentType == null)
+            return new HashMap<>();
+
+        if (contentType.startsWith("application/x-www-form-urlencoded")) {
+            Map<String, String> formData = new HashMap<>();
+            String[] pairs = body.split("&");
+            for (String pair : pairs) {
+                String[] kv = pair.split("=", 2);
+                if (kv.length == 2) {
+                    formData.put(URLDecoder.decode(kv[0], "UTF-8"), URLDecoder.decode(kv[1], "UTF-8"));
+                }
+            }
+
+            return formData;
+        }
+
+        if (contentType.startsWith("application/json")) {
+            Map<String, String> jsonBody = new HashMap<>();
+            jsonBody.put("raw", body);
+            return jsonBody;
+        }
+
+        return new HashMap<>();
+    }
+
     private Map<String, String> parseParams(String query) {
-        Map<String, String> params = new java.util.HashMap<>();
+        Map<String, String> params = new HashMap<>();
         String[] pairs = query.split("&");
         for (String pair : pairs) {
             String[] kv = pair.split("=");
@@ -79,6 +128,9 @@ public class Request {
             sb.append(entry.getKey()).append("=").append(entry.getValue()).append("\n");
         }
         for (Map.Entry<String, String> entry : headers.entrySet()) {
+            sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+        }
+        for (Map.Entry<String, String> entry : body.entrySet()) {
             sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
         }
         sb.append("\n");

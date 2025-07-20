@@ -46,7 +46,7 @@ public class Response {
         if (!HttpUtils.ensureResourceUnderWebRoot(resource, webRoot)) {
             this.statusCode = 403;
             this.statusMessage = "Forbidden";
-        } else if (!HttpUtils.validateStaticMethod(request.method)) {
+        } else if (!HttpUtils.validateMethod(request.method)) {
             this.statusCode = 405;
             this.statusMessage = "Method Not Allowed";
         } else if (!HttpUtils.ensureResourceExists(resource)) {
