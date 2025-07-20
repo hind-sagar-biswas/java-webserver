@@ -23,7 +23,7 @@ public class Request {
     public Request(String method, String path, String version, Map<String, String> headers, Map<String, String> body) {
         String[] pathParts = path.split("\\?", 2);
 
-        this.method = method;
+        this.method = method.toUpperCase();
         this.path = pathParts[0];
         this.version = version;
         this.headers = headers;
@@ -38,7 +38,7 @@ public class Request {
 
         String[] pathParts = parts[1].split("\\?", 2);
 
-        this.method = parts[0];
+        this.method = parts[0].toUpperCase();
         this.path = pathParts[0];
         this.version = parts[2];
 
