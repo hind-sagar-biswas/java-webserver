@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * HttpUtils
@@ -27,6 +28,27 @@ public class HttpUtils {
         MIME_TYPES.put("ico", "image/x-icon");
         MIME_TYPES.put("svg", "image/svg+xml");
         MIME_TYPES.put("txt", "text/plain");
+        MIME_TYPES.put("webp", "image/webp");
+        MIME_TYPES.put("woff", "font/woff");
+        MIME_TYPES.put("woff2", "font/woff2");
+        MIME_TYPES.put("ttf", "font/ttf");
+        MIME_TYPES.put("mp4", "video/mp4");
+        MIME_TYPES.put("pdf", "application/pdf");
+    }
+
+    private static final Set<String> SUPPORTED_METHODS = Set.of("GET", "POST", "HEAD", "PUT", "PATCH", "DELETE");
+    private static final Set<String> STATIC_METHODS = Set.of("GET", "HEAD");
+
+    private HttpUtils() {
+        throw new UnsupportedOperationException("Utility class");
+    }
+
+    public static boolean validateMethod(String method) {
+        return method != null && SUPPORTED_METHODS.contains(method.toUpperCase());
+    }
+
+    public static boolean validateStaticMethod(String method) {
+        return method != null && STATIC_METHODS.contains(method);
     }
 
     public static String guessMime(String filename) {
@@ -48,7 +70,7 @@ public class HttpUtils {
 
     public static boolean ensureResourceUnderWebRoot(File requested, File webRoot) {
         try {
-            return requested.getPath().startsWith(webRoot.getCanonicalPath());
+            return requested.getCanonicalPath().startsWith(webRoot.getCanonicalPath());
         } catch (IOException e) {
             System.err.println("Failed to get canonical path for " + requested + ": " + e.getMessage());
             return false;
@@ -67,16 +89,6 @@ public class HttpUtils {
         return requested;
     }
 
-    public static boolean validateMethod(String method) {
-
-        return method.equals("GET") || method.equals("POST") || method.equals("HEAD") || method.equals("PUT")
-                || method.equals("PATCH") || method.equals("DELETE");
-    }
-
-    public static boolean validateStaticMethod(String method) {
-        return method.equals("GET") || method.equals("HEAD");
-    }
-
     public static void sendResponse(OutputStream out, Request request, HttpResponse response) {
         try {
             String responseHeader = response.toString();
@@ -87,10 +99,11 @@ public class HttpUtils {
             pw.write("\r\n");
             pw.flush();
 
-            if (!request.method.equals("HEAD")) {
+            if (!request.method.equals("HEAD") && responseBody != null) {
                 out.write(responseBody);
-                out.flush();
             }
+
+            out.flush();
         } catch (IOException e) {
             System.err.println("Failed to send response: " + e.getMessage());
         }
