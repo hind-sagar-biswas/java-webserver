@@ -6,6 +6,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * ConnectionHandler
@@ -13,6 +15,7 @@ import java.net.Socket;
 public class ConnectionHandler implements Runnable {
 
     private final Socket client;
+    private Request request;
 
     public ConnectionHandler(Socket client) {
         this.client = client;
@@ -22,9 +25,9 @@ public class ConnectionHandler implements Runnable {
     public void run() {
         try (InputStream in = client.getInputStream(); OutputStream out = client.getOutputStream();) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            String line = reader.readLine();
+            request = new Request(reader);
 
-            System.out.println(">> " + line);
+            System.out.println(">> " + request);
             // TODO: parse headers, body, etc.
 
             String response = "HTTP/1.1 200 OK\r\n" +
@@ -42,5 +45,17 @@ public class ConnectionHandler implements Runnable {
             } catch (IOException ignored) {
             }
         }
+    }
+
+    private Map<String, String> parseHeaders(BufferedReader reader) throws IOException {
+        Map<String, String> headers = new HashMap<>();
+        String line;
+
+        while ((line = reader.readLine()) != null && !line.isEmpty()) {
+            String[] parts = line.split(": ");
+            headers.put(parts[0], parts[1]);
+        }
+
+        return headers;
     }
 }
