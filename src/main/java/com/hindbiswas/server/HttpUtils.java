@@ -68,7 +68,9 @@ public class HttpUtils {
     }
 
     public static boolean validateMethod(String method) {
-        return method.equals("GET") || method.equals("POST") || method.equals("HEAD");
+
+        return method.equals("GET") || method.equals("POST") || method.equals("HEAD") || method.equals("PUT")
+                || method.equals("PATCH") || method.equals("DELETE");
     }
 
     public static boolean validateStaticMethod(String method) {
