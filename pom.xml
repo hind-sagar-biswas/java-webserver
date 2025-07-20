@@ -24,8 +24,8 @@
   <distributionManagement>
     <repository>
       <id>github</id>
-      <name>GitHub hind‑sagar‑biswas Apache Maven Packages</name>
-      <url>https://maven.pkg.github.com/hind‑sagar‑biswas/java‑webserver</url>
+      <name>GitHub hind-sagar-biswas Apache Maven Packages</name>
+      <url>https://maven.pkg.github.com/hind-sagar-biswas/java-webserver</url>
     </repository>
   </distributionManagement>
 
