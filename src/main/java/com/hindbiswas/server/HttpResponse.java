@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Response
  */
-public class HttpResponse {
+class HttpResponse {
 
     private int statusCode = 200;
     private String statusMessage = "OK";

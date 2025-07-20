@@ -12,7 +12,7 @@ import java.net.SocketTimeoutException;
 /**
  * ConnectionHandler
  */
-public class ConnectionHandler implements Runnable {
+class ConnectionHandler implements Runnable {
 
     private final Socket client;
     private final File webRoot;
