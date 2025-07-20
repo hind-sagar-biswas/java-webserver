@@ -25,8 +25,9 @@ public class Response {
 
     public Response(Request request, File webRoot) {
         File resource;
+        String path = (request.path.startsWith("/")) ? request.path.substring(1) : request.path;
         try {
-            String decoded = URLDecoder.decode(request.path, "UTF-8");
+            String decoded = URLDecoder.decode(path, "UTF-8");
             File raw = new File(webRoot, decoded);
             resource = HttpUtils.indexIfDirectory(raw.getCanonicalFile());
 
