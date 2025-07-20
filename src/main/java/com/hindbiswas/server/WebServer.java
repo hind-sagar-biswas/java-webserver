@@ -1,6 +1,7 @@
 package com.hindbiswas.server;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
@@ -10,7 +11,9 @@ public class WebServer {
     private final int port;
     private final ExecutorService pool;
     private final File webRoot;
-    private Router router = null;
+    private volatile Router router = null;
+    private volatile boolean running = false;
+    private ServerSocket serverSocket;
 
     public WebServer() {
         this.port = 8080;
@@ -49,13 +52,14 @@ public class WebServer {
     }
 
     public void start() {
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
+        running = true;
+        if (router == null)
+            router = new StaticRouter();
+        try {
+            serverSocket = new ServerSocket(port);
             System.out.println("Server started on port " + port);
-            while (true) {
+            while (running) {
                 Socket socket = serverSocket.accept();
-                if (router == null) {
-                    pool.submit(new ConnectionHandler(socket, webRoot));
-                }
                 pool.submit(new ConnectionHandler(socket, webRoot, router));
             }
         } catch (Exception e) {
@@ -63,10 +67,18 @@ public class WebServer {
         }
     }
 
-    public WebServer setRouter(Router router) throws IllegalStateException {
-        if (this.router != null) {
-            throw new IllegalStateException("Router is already set. Cannot set a new router.");
+    public void stop() {
+        running = false;
+        try {
+            if (serverSocket != null)
+                serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+        pool.shutdown();
+    }
+
+    public WebServer setRouter(Router router) throws IllegalStateException {
         this.router = router;
         return this;
     }
