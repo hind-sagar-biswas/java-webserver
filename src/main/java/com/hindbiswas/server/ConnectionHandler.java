@@ -16,10 +16,18 @@ public class ConnectionHandler implements Runnable {
 
     private final Socket client;
     private final File webRoot;
+    private final Router router;
 
     public ConnectionHandler(Socket client, File webRoot) {
         this.client = client;
         this.webRoot = webRoot;
+        this.router = new StaticRouter();
+    }
+
+    public ConnectionHandler(Socket client, File webRoot, Router router) {
+        this.client = client;
+        this.webRoot = webRoot;
+        this.router = router;
     }
 
     @Override
@@ -31,7 +39,7 @@ public class ConnectionHandler implements Runnable {
             client.setSoTimeout(10000);
             while (keepAlive) {
                 Request request = new Request(reader);
-                Response response = new Response(request, webRoot);
+                HttpResponse response = router.resolve(request, webRoot);
 
                 System.out.println("[INCOMING]: " + request);
                 System.out.println("[OUTGOING]: " + response);

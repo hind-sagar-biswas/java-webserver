@@ -42,6 +42,10 @@ public class HttpUtils {
         return "application/octet-stream";
     }
 
+    public static boolean ensureValidStatusCode(int statusCode) {
+        return statusCode >= 200 && statusCode <= 599;
+    }
+
     public static boolean ensureResourceUnderWebRoot(File requested, File webRoot) {
         try {
             return requested.getPath().startsWith(webRoot.getCanonicalPath());
@@ -71,7 +75,7 @@ public class HttpUtils {
         return method.equals("GET") || method.equals("HEAD");
     }
 
-    public static void sendResponse(OutputStream out, Request request, Response response) {
+    public static void sendResponse(OutputStream out, Request request, HttpResponse response) {
         try {
             String responseHeader = response.toString();
             byte[] responseBody = response.getBody();

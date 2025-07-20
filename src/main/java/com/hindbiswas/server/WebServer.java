@@ -10,6 +10,7 @@ public class WebServer {
     private final int port;
     private final ExecutorService pool;
     private final File webRoot;
+    private Router router = null;
 
     public WebServer() {
         this.port = 8080;
@@ -52,11 +53,26 @@ public class WebServer {
             System.out.println("Server started on port " + port);
             while (true) {
                 Socket socket = serverSocket.accept();
-                pool.submit(new ConnectionHandler(socket, webRoot));
+                if (router == null) {
+                    pool.submit(new ConnectionHandler(socket, webRoot));
+                }
+                pool.submit(new ConnectionHandler(socket, webRoot, router));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public WebServer setRouter(Router router) throws IllegalStateException {
+        if (this.router != null) {
+            throw new IllegalStateException("Router is already set. Cannot set a new router.");
+        }
+        this.router = router;
+        return this;
+    }
+
+    public Router getRouter() {
+        return router;
     }
 
     private File validateWebRoot(String webRoot) throws IllegalArgumentException {

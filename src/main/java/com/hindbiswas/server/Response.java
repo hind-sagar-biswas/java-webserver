@@ -2,101 +2,120 @@ package com.hindbiswas.server;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
- * Response
+ * A unified HTTP response representation.
  */
 public class Response {
+    // Centralized status code → reason phrase map
+    private static final Map<Integer, String> REASON_PHRASES;
+    static {
+        Map<Integer, String> map = new LinkedHashMap<>();
+        map.put(200, "OK");
+        map.put(204, "No Content");
+        map.put(301, "Moved Permanently");
+        map.put(302, "Found");
+        map.put(303, "See Other");
+        map.put(400, "Bad Request");
+        map.put(401, "Unauthorized");
+        map.put(403, "Forbidden");
+        map.put(404, "Not Found");
+        map.put(500, "Internal Server Error");
+        map.put(503, "Service Unavailable");
+        REASON_PHRASES = Collections.unmodifiableMap(map);
+    }
 
-    private int statusCode = 200;
-    private String statusMessage = "OK";
-    private byte[] body;
-    private String mimeType = "text/html";
+    private final int statusCode;
+    private final String statusMessage;
+    private final byte[] body;
+    private final String mimeType;
+    private final Map<String, String> headers;
 
-    public Response(int statusCode, String statusMessage, byte[] body, String mimeType) {
+    /**
+     * Master constructor: initializes all fields and builds headers.
+     */
+    private Response(int statusCode, String mimeType, byte[] body, Map<String, String> extraHeaders) {
+        if (!REASON_PHRASES.containsKey(statusCode)) {
+            throw new IllegalArgumentException("Unsupported status code: " + statusCode);
+        }
         this.statusCode = statusCode;
-        this.statusMessage = statusMessage;
-        this.body = body;
+        this.statusMessage = REASON_PHRASES.get(statusCode);
         this.mimeType = mimeType;
-    }
 
-    public Response(Request request, File webRoot) {
-        File resource;
-        String path = (request.path.startsWith("/")) ? request.path.substring(1) : request.path;
-        try {
-            String decoded = URLDecoder.decode(path, "UTF-8");
-            File raw = new File(webRoot, decoded);
-            resource = HttpUtils.indexIfDirectory(raw.getCanonicalFile());
-
-        } catch (UnsupportedEncodingException e) {
-            this.statusCode = 500;
-            this.statusMessage = "Internal Server Error";
-            e.printStackTrace();
-            return;
-        } catch (IOException e) {
-            this.statusCode = 500;
-            this.statusMessage = "Internal Server Error";
-            e.printStackTrace();
-            return;
-        }
-
-        if (!HttpUtils.ensureResourceUnderWebRoot(resource, webRoot)) {
-            this.statusCode = 403;
-            this.statusMessage = "Forbidden";
-        } else if (!HttpUtils.validateMethod(request.method)) {
-            this.statusCode = 405;
-            this.statusMessage = "Method Not Allowed";
-        } else if (!HttpUtils.ensureResourceExists(resource)) {
-            this.statusCode = 404;
-            this.statusMessage = "Not Found";
+        // Handle status codes that must not have a body
+        if (body == null || statusCode == 204 || statusCode == 304) {
+            this.body = new byte[0];
         } else {
-            this.statusCode = 200;
-            this.statusMessage = "OK";
-            this.mimeType = HttpUtils.guessMime(resource.getName());
-            try {
-                this.body = Files.readAllBytes(resource.toPath());
-            } catch (IOException e) {
-                this.statusCode = 500;
-                this.statusMessage = "Internal Server Error";
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public int getStatusCode() {
-        return statusCode;
-    }
-
-    public String getStatusMessage() {
-        return statusMessage;
-    }
-
-    public String getMimeType() {
-        return mimeType;
-    }
-
-    public byte[] getBody() {
-        if (statusCode == 200) {
-            return body;
+            this.body = body;
         }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("<html><head><title>").append(statusCode).append(" ").append(statusMessage).append("</title></head>");
-        sb.append("<body><h1>").append(statusCode).append(" ").append(statusMessage).append("</h1></body></html>");
-        return sb.toString().getBytes();
+        // Build immutable headers map
+        Map<String, String> hdrs = new LinkedHashMap<>();
+        // Add any custom headers (e.g. Location for redirects)
+        if (extraHeaders != null) {
+            extraHeaders.forEach((k, v) -> hdrs.put(k.trim(), v.trim()));
+        }
+        this.headers = Collections.unmodifiableMap(hdrs);
     }
 
-    @Override
-    public String toString() {
-        int length = (body != null ? body.length : 0);
+    /** Static factory: serve a file or directory (with index.html). */
+    public static Response file(File file) throws IOException {
+        File resource = HttpUtils.indexIfDirectory(file.getCanonicalFile());
+        byte[] data = Files.readAllBytes(resource.toPath());
+        String mime = HttpUtils.guessMime(resource.getName());
+        return new Response(200, mime, data, null);
+    }
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("HTTP/1.1 ").append(statusCode).append(" ").append(statusMessage).append("\r\n");
-        sb.append("Content-Type: ").append(mimeType).append("\r\n");
-        sb.append("Content-Length: ").append(length).append("\r\n");
-        return sb.toString();
+    /** Static factory: plain text response. */
+    public static Response text(String text) {
+        return new Response(200, "text/plain", text.getBytes(StandardCharsets.UTF_8), null);
+    }
+
+    /** Static factory: JSON response with 200 OK. */
+    public static Response json(String json) {
+        return new Response(200, "application/json", json.getBytes(StandardCharsets.UTF_8), null);
+    }
+
+    /** Static factory: JSON response with custom status code. */
+    public static Response json(String json, int code) {
+        return new Response(code, "application/json", json.getBytes(StandardCharsets.UTF_8), null);
+    }
+
+    /** Static factory: redirect (302 Found by default). */
+    public static Response redirect(String url) {
+        return redirect(url, 302);
+    }
+
+    /** Static factory: redirect with specific 301,302, or 303. */
+    public static Response redirect(String url, int statusCode) {
+        if (statusCode != 301 && statusCode != 302 && statusCode != 303) {
+            throw new IllegalArgumentException("Redirect only supports 301, 302, or 303");
+        }
+        Map<String, String> extra = new HashMap<>();
+        extra.put("Location", url);
+        return new Response(statusCode, "text/plain", new byte[0], extra);
+    }
+
+    /** Static factory: error page with HTML body. */
+    public static Response error(int statusCode) {
+        if (statusCode == 204 || statusCode == 304) {
+            return new Response(statusCode, "text/plain", new byte[0], null);
+        }
+        String msg = REASON_PHRASES.getOrDefault(statusCode, "Error");
+        String html = "<html><head><title>" + statusCode + " " + msg +
+                "</title></head><body><h1>" + statusCode + " " + msg +
+                "</h1></body></html>";
+        return new Response(statusCode, "text/html", html.getBytes(StandardCharsets.UTF_8), null);
+    }
+
+    /** Convert to a low-level HttpResponse (for sending over socket). */
+    public HttpResponse toHttpResponse() {
+        return new HttpResponse(statusCode, statusMessage, body, mimeType, headers);
     }
 }
