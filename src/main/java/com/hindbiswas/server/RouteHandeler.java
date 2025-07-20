@@ -1,7 +1,7 @@
 package com.hindbiswas.server;
 
 /**
- * RouteHandeler
+ * RouteHandeler: Handles a request.
  */
 @FunctionalInterface
 public interface RouteHandeler {

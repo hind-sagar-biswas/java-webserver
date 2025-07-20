@@ -3,7 +3,7 @@ package com.hindbiswas.server;
 import java.io.File;
 
 /**
- * Router
+ * HybridRouter: Tries API routes first, falls back to static files on GET/POST.
  */
 public class HybridRouter extends AbstractMethodRouter {
     @Override

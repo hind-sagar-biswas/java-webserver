@@ -182,7 +182,7 @@ public class HttpUtils {
             pw.write("\r\n");
             pw.flush();
 
-            if (!request.method.equals("HEAD") && responseBody != null) {
+            if (request != null && !request.method.equals("HEAD") && responseBody != null) {
                 out.write(responseBody);
             }
 
