@@ -8,21 +8,45 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Request
+ * Represents an HTTP request parsed from a socket input stream.
+ * Supports parsing request line, headers, query parameters, and body
+ * (form/json/text).
  */
 public class Request {
 
+    /** HTTP method (e.g., GET, POST) */
     public final String method;
+
+    /** Request path (e.g., /api/data) */
     public final String path;
+
+    /** HTTP version (e.g., HTTP/1.1) */
     public final String version;
+
+    /** Parsed body parameters (form fields or raw data) */
     public final Map<String, String> body;
+
+    /** Query parameters parsed from URL */
     public final Map<String, String> params;
+
+    /** HTTP headers map (lowercased keys) */
     public final Map<String, String> headers;
+
+    /** Content-Length if present */
     private int contentLength;
 
-    public Request(String method, String path, String version, Map<String, String> headers, Map<String, String> body) {
-        String[] pathParts = path.split("\\?", 2);
-
+    /**
+     * Constructs a request manually (usually for testing).
+     *
+     * @param method   HTTP method (e.g., GET)
+     * @param fullPath Path with optional query string
+     * @param version  HTTP version (e.g., HTTP/1.1)
+     * @param headers  Map of headers
+     * @param body     Optional body data
+     */
+    public Request(String method, String fullPath, String version, Map<String, String> headers,
+            Map<String, String> body) {
+        String[] pathParts = parsePathAndParams(fullPath);
         this.method = method.toUpperCase();
         this.path = pathParts[0];
         this.version = version;
@@ -31,31 +55,61 @@ public class Request {
         this.body = body != null ? body : new HashMap<>();
     }
 
+    /**
+     * Constructs a Request by parsing an incoming BufferedReader.
+     * Supports GET, POST, query params, headers, and basic body formats.
+     *
+     * @param reader BufferedReader from socket InputStream
+     * @throws IOException If request line is malformed or reading fails
+     */
     public Request(BufferedReader reader) throws IOException {
-        // First line always contains the method, path, and version
-        String line = reader.readLine(); // GET / HTTP/1.1
-        String[] parts = line.split(" ");
+        String line = reader.readLine(); // Example: GET /path HTTP/1.1
+        if (line == null || line.trim().isEmpty()) {
+            throw new IOException("Empty or null request line");
+        }
 
-        String[] pathParts = parts[1].split("\\?", 2);
+        String[] parts = line.split(" ", 3);
+        if (parts.length < 3) {
+            throw new IOException("Invalid HTTP request line: " + line);
+        }
 
         this.method = parts[0].toUpperCase();
+        String[] pathParts = parsePathAndParams(parts[1]);
         this.path = pathParts[0];
         this.version = parts[2];
 
-        // Parse headers
         this.headers = parseHeaders(reader);
-
-        // Parse query parameters
         this.params = pathParts.length > 1 ? parseParams(pathParts[1]) : new HashMap<>();
 
-        // Parse body
         if (headers.containsKey("content-length")) {
-            this.body = parseBody(reader);
+            try {
+                contentLength = Integer.parseInt(headers.get("content-length"));
+                this.body = parseBody(reader);
+            } catch (NumberFormatException e) {
+                throw new IOException("Invalid Content-Length value", e);
+            }
         } else {
             this.body = new HashMap<>();
         }
     }
 
+    /**
+     * Parses path and query string.
+     * 
+     * @param path Full path, possibly including query string
+     * @return Array: [0] path, [1] query (if present)
+     */
+    private String[] parsePathAndParams(String path) {
+        return path.split("\\?", 2);
+    }
+
+    /**
+     * Parses headers from input stream.
+     * 
+     * @param reader BufferedReader after request line
+     * @return Map of lowercase header names to values
+     * @throws IOException if reading headers fails
+     */
     private Map<String, String> parseHeaders(BufferedReader reader) throws IOException {
         Map<String, String> headers = new HashMap<>();
         String line;
@@ -64,20 +118,25 @@ public class Request {
             if (parts.length == 2) {
                 String name = parts[0].trim().toLowerCase();
                 String value = parts[1].trim();
-
                 headers.put(name, value);
-
-                if (name.equals("content-length")) {
-                    contentLength = Integer.parseInt(value);
-                }
             }
         }
         return headers;
     }
 
+    /**
+     * Parses request body based on Content-Type.
+     * Supports: application/x-www-form-urlencoded, application/json, text/plain
+     *
+     * @param reader BufferedReader after headers
+     * @return Map of parsed body fields or raw data
+     * @throws IOException if reading fails
+     */
     private Map<String, String> parseBody(BufferedReader reader) throws IOException {
         char[] buffer = new char[contentLength];
         int read = reader.read(buffer);
+        if (read < 0)
+            return new HashMap<>();
         String body = new String(buffer, 0, read);
 
         String contentType = headers.get("content-type");
@@ -93,35 +152,46 @@ public class Request {
                     formData.put(URLDecoder.decode(kv[0], "UTF-8"), URLDecoder.decode(kv[1], "UTF-8"));
                 }
             }
-
             return formData;
-        }
-
-        if (contentType.startsWith("application/json")) {
+        } else if (contentType.startsWith("application/json")) {
             Map<String, String> jsonBody = new HashMap<>();
             jsonBody.put("raw", body);
             return jsonBody;
+        } else if (contentType.startsWith("text/plain")) {
+            Map<String, String> plainBody = new HashMap<>();
+            plainBody.put("text", body);
+            return plainBody;
         }
 
         return new HashMap<>();
     }
 
+    /**
+     * Parses query parameters (URL-encoded) into a Map.
+     * 
+     * @param query URL query string (e.g., name=John&id=3)
+     * @return Map of decoded query parameters
+     */
     private Map<String, String> parseParams(String query) {
         Map<String, String> params = new HashMap<>();
         String[] pairs = query.split("&");
         for (String pair : pairs) {
-            String[] kv = pair.split("=");
+            String[] kv = pair.split("=", 2);
             try {
                 params.put(URLDecoder.decode(kv[0], "UTF-8"), kv.length > 1 ? URLDecoder.decode(kv[1], "UTF-8") : "");
             } catch (UnsupportedEncodingException e) {
-                e.printStackTrace();
+                throw new RuntimeException("Failed to decode query parameter", e);
             }
         }
         return params;
     }
 
+    /**
+     * Converts request to a readable string (for debugging).
+     * Includes method, path, version, headers, params, and body.
+     */
+    @Override
     public String toString() {
-        // Build a string representation of the request
         StringBuilder sb = new StringBuilder();
         sb.append(method).append(" ").append(path).append(" ").append(version).append("\n");
         for (Map.Entry<String, String> entry : params.entrySet()) {
@@ -137,10 +207,21 @@ public class Request {
         return sb.toString();
     }
 
+    /**
+     * Returns a header value by key (case-sensitive).
+     * 
+     * @param key Header name
+     * @return Value or null if not found
+     */
     public String getHeader(String key) {
         return headers.get(key);
     }
 
+    /**
+     * Checks if the request version is HTTP/1.0.
+     * 
+     * @return true if HTTP/1.0, false otherwise
+     */
     public boolean isHttp10() {
         return "HTTP/1.0".equalsIgnoreCase(version);
     }
