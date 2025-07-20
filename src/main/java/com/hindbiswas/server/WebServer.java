@@ -4,8 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 
 public class WebServer {
     private final int port;
@@ -57,11 +60,18 @@ public class WebServer {
             router = new StaticRouter();
         try {
             serverSocket = new ServerSocket(port);
+            serverSocket.setSoTimeout(3000);
             System.out.println("Server started on port " + port);
             while (running) {
                 Socket socket = serverSocket.accept();
-                pool.submit(new ConnectionHandler(socket, webRoot, router));
+                try {
+                    pool.submit(new ConnectionHandler(socket, webRoot, router));
+                } catch (RejectedExecutionException e) {
+                    System.err.println("Task rejected: " + e.getMessage());
+                    socket.close();
+                }
             }
+        } catch (SocketTimeoutException ignored) {
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -76,9 +86,18 @@ public class WebServer {
             e.printStackTrace();
         }
         pool.shutdown();
+        try {
+            if (!pool.awaitTermination(10, TimeUnit.SECONDS)) {
+                pool.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            pool.shutdownNow();
+        }
     }
 
     public WebServer setRouter(Router router) throws IllegalStateException {
+        if (running)
+            throw new IllegalStateException("Cannot set router after server has started.");
         this.router = router;
         return this;
     }
