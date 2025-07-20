@@ -1,13 +1,12 @@
 package com.hindbiswas.server;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * ConnectionHandler
@@ -15,28 +14,25 @@ import java.util.Map;
 public class ConnectionHandler implements Runnable {
 
     private final Socket client;
-    private Request request;
+    private final File webRoot;
 
-    public ConnectionHandler(Socket client) {
+    public ConnectionHandler(Socket client, File webRoot) {
         this.client = client;
+        this.webRoot = webRoot;
     }
 
     @Override
     public void run() {
         try (InputStream in = client.getInputStream(); OutputStream out = client.getOutputStream();) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-            request = new Request(reader);
 
-            System.out.println(">> " + request);
-            // TODO: parse headers, body, etc.
+            Request request = new Request(reader);
+            Response response = new Response(request, webRoot);
 
-            String response = "HTTP/1.1 200 OK\r\n" +
-                    "Content-Type: text/plain; charset=UTF-8\r\n" +
-                    "Content-Length: 11\r\n" +
-                    "\r\n" +
-                    "Hello World";
-            out.write(response.getBytes("UTF-8"));
-            out.flush();
+            System.out.println("[INCOMING]: " + request);
+            System.out.println("[OUTGOING]: " + response);
+
+            HttpUtils.sendResponse(out, request, response);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -45,17 +41,5 @@ public class ConnectionHandler implements Runnable {
             } catch (IOException ignored) {
             }
         }
-    }
-
-    private Map<String, String> parseHeaders(BufferedReader reader) throws IOException {
-        Map<String, String> headers = new HashMap<>();
-        String line;
-
-        while ((line = reader.readLine()) != null && !line.isEmpty()) {
-            String[] parts = line.split(": ");
-            headers.put(parts[0], parts[1]);
-        }
-
-        return headers;
     }
 }
