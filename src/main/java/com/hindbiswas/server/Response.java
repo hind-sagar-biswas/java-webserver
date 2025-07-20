@@ -114,6 +114,16 @@ public class Response {
         return new Response(statusCode, "text/html", html.getBytes(StandardCharsets.UTF_8), null);
     }
 
+    /** Static factory: error page with HTML body. */
+    public static Response jsonError(int statusCode) {
+        if (statusCode == 204 || statusCode == 304) {
+            return new Response(statusCode, "text/plain", new byte[0], null);
+        }
+        String msg = REASON_PHRASES.getOrDefault(statusCode, "Error");
+        String json = "{\"error\": \"" + msg + "\", \"code\": " + statusCode + "}";
+        return new Response(statusCode, "application/json", json.getBytes(StandardCharsets.UTF_8), null);
+    }
+
     /** Convert to a low-level HttpResponse (for sending over socket). */
     public HttpResponse toHttpResponse() {
         return new HttpResponse(statusCode, statusMessage, body, mimeType, headers);
