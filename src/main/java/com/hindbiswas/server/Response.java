@@ -13,24 +13,6 @@ import java.util.HashMap;
  * A unified HTTP response representation.
  */
 public class Response {
-    // Centralized status code → reason phrase map
-    private static final Map<Integer, String> REASON_PHRASES;
-    static {
-        Map<Integer, String> map = new LinkedHashMap<>();
-        map.put(200, "OK");
-        map.put(204, "No Content");
-        map.put(301, "Moved Permanently");
-        map.put(302, "Found");
-        map.put(303, "See Other");
-        map.put(400, "Bad Request");
-        map.put(401, "Unauthorized");
-        map.put(403, "Forbidden");
-        map.put(404, "Not Found");
-        map.put(500, "Internal Server Error");
-        map.put(503, "Service Unavailable");
-        REASON_PHRASES = Collections.unmodifiableMap(map);
-    }
-
     private final int statusCode;
     private final String statusMessage;
     private final byte[] body;
@@ -41,11 +23,11 @@ public class Response {
      * Master constructor: initializes all fields and builds headers.
      */
     private Response(int statusCode, String mimeType, byte[] body, Map<String, String> extraHeaders) {
-        if (!REASON_PHRASES.containsKey(statusCode)) {
+        if (!HttpUtils.isStatusCodeSupported(statusCode)) {
             throw new IllegalArgumentException("Unsupported status code: " + statusCode);
         }
         this.statusCode = statusCode;
-        this.statusMessage = REASON_PHRASES.get(statusCode);
+        this.statusMessage = HttpUtils.getStatusMessage(statusCode);
         this.mimeType = mimeType;
 
         // Handle status codes that must not have a body
@@ -107,7 +89,7 @@ public class Response {
         if (statusCode == 204 || statusCode == 304) {
             return new Response(statusCode, "text/plain", new byte[0], null);
         }
-        String msg = REASON_PHRASES.getOrDefault(statusCode, "Error");
+        String msg = HttpUtils.getStatusMessage(statusCode);
         String html = "<html><head><title>" + statusCode + " " + msg +
                 "</title></head><body><h1>" + statusCode + " " + msg +
                 "</h1></body></html>";
@@ -119,7 +101,7 @@ public class Response {
         if (statusCode == 204 || statusCode == 304) {
             return new Response(statusCode, "text/plain", new byte[0], null);
         }
-        String msg = REASON_PHRASES.getOrDefault(statusCode, "Error");
+        String msg = HttpUtils.getStatusMessage(statusCode);
         String json = "{\"error\": \"" + msg + "\", \"code\": " + statusCode + "}";
         return new Response(statusCode, "application/json", json.getBytes(StandardCharsets.UTF_8), null);
     }
