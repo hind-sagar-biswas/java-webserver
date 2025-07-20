@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 
 /**
  * ConnectionHandler
@@ -25,14 +26,25 @@ public class ConnectionHandler implements Runnable {
     public void run() {
         try (InputStream in = client.getInputStream(); OutputStream out = client.getOutputStream();) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+            boolean keepAlive = true;
 
-            Request request = new Request(reader);
-            Response response = new Response(request, webRoot);
+            client.setSoTimeout(10000);
+            while (keepAlive) {
+                Request request = new Request(reader);
+                Response response = new Response(request, webRoot);
 
-            System.out.println("[INCOMING]: " + request);
-            System.out.println("[OUTGOING]: " + response);
+                System.out.println("[INCOMING]: " + request);
+                System.out.println("[OUTGOING]: " + response);
 
-            HttpUtils.sendResponse(out, request, response);
+                HttpUtils.sendResponse(out, request, response);
+
+                String connHeader = request.getHeader("Connection");
+                if ("close".equalsIgnoreCase(connHeader) || request.isHttp10()) {
+                    keepAlive = false;
+                }
+            }
+        } catch (SocketTimeoutException e) {
+            System.out.println("[TIMEOUT]: " + client.getRemoteSocketAddress());
         } catch (IOException e) {
             e.printStackTrace();
         } finally {

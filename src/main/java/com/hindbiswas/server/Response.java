@@ -97,7 +97,6 @@ public class Response {
         sb.append("HTTP/1.1 ").append(statusCode).append(" ").append(statusMessage).append("\r\n");
         sb.append("Content-Type: ").append(mimeType).append("\r\n");
         sb.append("Content-Length: ").append(length).append("\r\n");
-        sb.append("Connection: close").append("\r\n");
         return sb.toString();
     }
 }

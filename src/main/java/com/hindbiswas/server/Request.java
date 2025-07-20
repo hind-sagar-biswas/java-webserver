@@ -84,4 +84,12 @@ public class Request {
         sb.append("\n");
         return sb.toString();
     }
+
+    public String getHeader(String key) {
+        return headers.get(key);
+    }
+
+    public boolean isHttp10() {
+        return "HTTP/1.0".equalsIgnoreCase(version);
+    }
 }
