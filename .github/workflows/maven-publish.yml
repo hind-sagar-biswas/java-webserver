@@ -23,7 +23,7 @@ jobs:
           java-version: '24'
           server-id: github              # must match distributionManagement/repository/id in pom.xml
           server-username: ${{ github.actor }}
-          server-password: ${{ secrets.GH_TOKEN }}
+          server-password: ${{ secrets.GITHUB_TOKEN }}
           # (optional) settings-path: ${{ github.workspace }} 
 
       - name: Build & Deploy
