@@ -8,6 +8,7 @@ public class App {
     public static void main(String[] args) {
         int port = 8080;
         WebServer server = new WebServer(port, "/home/shinigami/www");
+
         HybridRouter router = new HybridRouter();
 
         router.get("/time", request -> {

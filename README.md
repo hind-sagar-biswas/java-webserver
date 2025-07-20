@@ -9,8 +9,9 @@ A minimal yet flexible HTTP 1.1 server written from scratch in Java — no `Http
 * **Static File Serving**: Serve static files with correct MIME types via `HttpUtils`
 * **Routing**:
 
-  * `HybridRouter` for custom GET/POST route handlers
+  * `HybridRouter` for custom GET/POST/PUT/PATCH/DELETE route handlers
   * `StaticRouter` for static file routing only
+  * `ApiRouter` for API routing (no static files)
 * **Redirection Support**: 301/302 redirects
 * **Simple JSON & Plaintext Responses**: Easy-to-use API
 * **Extensible**: Modular structure for easy enhancements
@@ -19,26 +20,34 @@ A minimal yet flexible HTTP 1.1 server written from scratch in Java — no `Http
 
 ```plaintext
 .
+├── LICENSE
 ├── pom.xml
 ├── README.md
-├── LICENSE
-└── src
-    └── main
-        └── java
-            └── com
-                └── hindbiswas
-                    └── server
-                        ├── App.java
-                        ├── ConnectionHandler.java
-                        ├── HttpResponse.java
-                        ├── HttpUtils.java
-                        ├── HybridRouter.java
-                        ├── Request.java
-                        ├── Response.java
-                        ├── RouteHandeler.java
-                        ├── Router.java
-                        ├── StaticRouter.java
-                        └── WebServer.java
+├── src
+│   ├── main
+│   │   └── java
+│   │       └── com
+│   │           └── hindbiswas
+│   │               └── server
+│   │                   ├── AbstractMethodRouter.java
+│   │                   ├── ApiRouter.java
+│   │                   ├── App.java
+│   │                   ├── ConnectionHandler.java
+│   │                   ├── HttpResponse.java
+│   │                   ├── HttpUtils.java
+│   │                   ├── HybridRouter.java
+│   │                   ├── Request.java
+│   │                   ├── Response.java
+│   │                   ├── RouteHandeler.java
+│   │                   ├── Router.java
+│   │                   ├── StaticRouter.java
+│   │                   └── WebServer.java
+│   └── test
+│       └── java
+│           └── com
+│               └── hindbiswas
+│                   └── server
+│                       └── AppTest.java
 ```
 
 ## 🏁 Getting Started
@@ -57,10 +66,28 @@ mvn exec:java -Dexec.mainClass="com.hindbiswas.server.App"
 
 This will start the server on port `8080` and serve files from `/home/user/www`.
 
+## Installation (Maven)
+
+### Add the Dependency to your `pom.xml` file
+
+```xml
+<dependency>
+  <groupId>com.github.hind-sagar-biswas</groupId>
+  <artifactId>java-webserver</artifactId>
+  <version>1.1.0</version>
+</dependency>
+```
+
+### Run Install
+
+```bash
+mvn install
+```
+
 ## Example Usage
 
 ```java
-package com.hindbiswas.server;
+import com.hindbiswas.server.*;
 
 public class App {
     public static void main(String[] args) {
