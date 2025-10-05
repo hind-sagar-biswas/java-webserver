@@ -24,31 +24,34 @@ A minimal yet flexible HTTP 1.1 server written from scratch in Java — no `Http
 ├── pom.xml
 ├── README.md
 ├── src
-│   ├── main
-│   │   └── java
-│   │       └── com
-│   │           └── hindbiswas
-│   │               └── server
-│   │                   ├── AbstractMethodRouter.java
-│   │                   ├── ApiRouter.java
-│   │                   ├── App.java
-│   │                   ├── ConnectionHandler.java
-│   │                   ├── HttpResponse.java
-│   │                   ├── HttpUtils.java
-│   │                   ├── HybridRouter.java
-│   │                   ├── Request.java
-│   │                   ├── Response.java
-│   │                   ├── RouteHandeler.java
-│   │                   ├── Router.java
-│   │                   ├── StaticRouter.java
-│   │                   └── WebServer.java
-│   └── test
-│       └── java
-│           └── com
-│               └── hindbiswas
-│                   └── server
-│                       └── AppTest.java
-```
+│   ├── main
+│   │   └── java
+│   │       └── com
+│   │           └── hindbiswas
+│   │               └── server
+│   │                   ├── App.java
+│   │                   ├── core/
+│   │                   │   └── WebServer.java
+│   │                   ├── http/
+│   │                   │   ├── HttpResponse.java
+│   │                   │   ├── HttpUtils.java
+│   │                   │   ├── Request.java
+│   │                   │   └── Response.java
+│   │                   ├── routing/
+│   │                   │   ├── AbstractMethodRouter.java
+│   │                   │   ├── ApiRouter.java
+│   │                   │   ├── HybridRouter.java
+│   │                   │   ├── Router.java
+│   │                   │   └── StaticRouter.java
+│   │                   └── handler/
+│   │                       ├── ConnectionHandler.java
+│   │                       └── RouteHandler.java
+│   └── test
+│       └── java
+│           └── com
+│               └── hindbiswas
+│                   └── server
+│                       └── AppTest.java
 
 ## 🏁 Getting Started
 
@@ -87,7 +90,9 @@ mvn install
 ## Example Usage
 
 ```java
-import com.hindbiswas.server.*;
+import com.hindbiswas.server.core.WebServer;
+import com.hindbiswas.server.http.Response;
+import com.hindbiswas.server.routing.HybridRouter;
 
 public class App {
     public static void main(String[] args) {
@@ -95,14 +100,14 @@ public class App {
         String root = "/home/username/www"; // Change to your local static directory
 
         WebServer server = new WebServer(port, root);
-        Router router = new HybridRouter(); // not required for servinf only static files from `root`
+        HybridRouter router = new HybridRouter(); // not required for serving only static files from `root`
 
         router.get("/time", request ->
             Response.text("Current time: " + System.currentTimeMillis())
         );
 
         router.post("/echo", request ->
-            Response.json(request.body)
+            Response.json(request.body.toString())
         );
 
         server.setRouter(router);

@@ -1,4 +1,4 @@
-package com.hindbiswas.server;
+package com.hindbiswas.server.http;
 
 import java.io.File;
 import java.io.IOException;
@@ -96,7 +96,7 @@ public class Response {
         return new Response(statusCode, "text/html", html.getBytes(StandardCharsets.UTF_8), null);
     }
 
-    /** Static factory: error page with HTML body. */
+    /** Static factory: error page with JSON body. */
     public static Response jsonError(int statusCode) {
         if (statusCode == 204 || statusCode == 304) {
             return new Response(statusCode, "text/plain", new byte[0], null);

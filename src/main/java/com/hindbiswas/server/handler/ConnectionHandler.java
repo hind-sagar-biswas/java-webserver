@@ -1,4 +1,11 @@
-package com.hindbiswas.server;
+package com.hindbiswas.server.handler;
+
+import com.hindbiswas.server.http.HttpResponse;
+import com.hindbiswas.server.http.HttpUtils;
+import com.hindbiswas.server.http.Request;
+import com.hindbiswas.server.http.Response;
+import com.hindbiswas.server.routing.Router;
+import com.hindbiswas.server.routing.StaticRouter;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -16,7 +23,7 @@ import java.net.SocketTimeoutException;
  * resolving the request using a router, sending the appropriate HTTP response,
  * and managing connection persistence based on HTTP headers.
  */
-class ConnectionHandler implements Runnable {
+public class ConnectionHandler implements Runnable {
 
     /** The socket representing the client connection. */
     private final Socket client;
@@ -74,7 +81,7 @@ class ConnectionHandler implements Runnable {
 
                 try {
                     request = new Request(reader);
-                    router.resolve(request, webRoot);
+                    response = router.resolve(request, webRoot);
 
                     System.out.println("[INCOMING]: " + request);
                     System.out.println("[OUTGOING]: " + response);
@@ -87,7 +94,7 @@ class ConnectionHandler implements Runnable {
                 HttpUtils.sendResponse(out, request, response);
 
                 // Check for Connection header to determine if the connection should be closed
-                String connHeader = request.getHeader("Connection");
+                String connHeader = request.getHeader("connection");
                 if ("close".equalsIgnoreCase(connHeader) || request.isHttp10()) {
                     keepAlive = false;
                 }

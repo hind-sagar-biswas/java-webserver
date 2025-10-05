@@ -1,4 +1,7 @@
-package com.hindbiswas.server;
+package com.hindbiswas.server.routing;
+
+import com.hindbiswas.server.http.HttpResponse;
+import com.hindbiswas.server.http.Request;
 
 import java.io.File;
 
@@ -14,5 +17,5 @@ public interface Router {
      * @param webRoot the root directory for static file serving
      * @return the HttpResponse to send back
      */
-    public HttpResponse resolve(Request request, File webRoot);
+    HttpResponse resolve(Request request, File webRoot);
 }

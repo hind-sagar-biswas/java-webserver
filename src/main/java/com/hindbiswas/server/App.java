@@ -1,8 +1,11 @@
 package com.hindbiswas.server;
 
+import com.hindbiswas.server.core.WebServer;
+import com.hindbiswas.server.http.Response;
+import com.hindbiswas.server.routing.HybridRouter;
+
 /**
- * Hello world!
- *
+ * Example application demonstrating the Java WebServer.
  */
 public class App {
     public static void main(String[] args) {

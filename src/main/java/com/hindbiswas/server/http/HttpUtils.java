@@ -1,4 +1,4 @@
-package com.hindbiswas.server;
+package com.hindbiswas.server.http;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,10 +38,12 @@ public class HttpUtils {
         map.put(301, "Moved Permanently");
         map.put(302, "Found");
         map.put(303, "See Other");
+        map.put(304, "Not Modified");
         map.put(400, "Bad Request");
         map.put(401, "Unauthorized");
         map.put(403, "Forbidden");
         map.put(404, "Not Found");
+        map.put(405, "Method Not Allowed");
         map.put(500, "Internal Server Error");
         map.put(503, "Service Unavailable");
         REASON_PHRASES = Collections.unmodifiableMap(map);
@@ -217,7 +219,7 @@ public class HttpUtils {
     }
 
     /**
-     * Retrieve teh status message for a given status code
+     * Retrieve the status message for a given status code
      * 
      * @param statusCode the status code
      * @return the status message

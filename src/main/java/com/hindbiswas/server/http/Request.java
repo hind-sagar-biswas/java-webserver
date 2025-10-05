@@ -1,4 +1,4 @@
-package com.hindbiswas.server;
+package com.hindbiswas.server.http;
 
 import java.io.BufferedReader;
 import java.io.IOException;

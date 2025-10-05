@@ -1,4 +1,8 @@
-package com.hindbiswas.server;
+package com.hindbiswas.server.core;
+
+import com.hindbiswas.server.handler.ConnectionHandler;
+import com.hindbiswas.server.routing.Router;
+import com.hindbiswas.server.routing.StaticRouter;
 
 import java.io.File;
 import java.io.IOException;

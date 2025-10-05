@@ -1,4 +1,4 @@
-package com.hindbiswas.server;
+package com.hindbiswas.server.http;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import java.util.Map;
  * Represents an HTTP response to be sent to the client.
  * Handles static file serving and basic error response generation.
  */
-class HttpResponse {
+public class HttpResponse {
 
     private int statusCode = 200;
     private String statusMessage = "OK";
