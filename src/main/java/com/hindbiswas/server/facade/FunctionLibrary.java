@@ -1,6 +1,9 @@
 package com.hindbiswas.server.facade;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -79,7 +82,39 @@ public class FunctionLibrary extends com.hindbiswas.jhp.engine.FunctionLibrary {
             throw new IllegalArgumentException("Functional object cannot be null");
         }
 
+        RegisteredFunction func = new RegisteredFunction(functional, injectScope);
+        registry.computeIfAbsent(name, k -> Collections.synchronizedList(new ArrayList<>())).add(func);
 
         return this;
+    }
+
+    @Override
+    public Object callFunction(String name, List<Object> args, Deque<Map<String, Object>> scopes) {
+        if (name == null)
+            throw new IllegalArgumentException("Function name cannot be null");
+
+        // First try to find the function in overload registry
+        List<RegisteredFunction> funcs = registry.get(name);
+        if (funcs != null && !funcs.isEmpty()) {
+            List<String> diagnostic = new ArrayList<>();
+            for (RegisteredFunction func : funcs) {
+                try {
+                    Object output = invoke(func, args, scopes);
+                    return output;
+                } catch (InvocationFailureException e) {
+                    diagnostic.add(e.getMessage());
+                } catch (RuntimeException e) {
+                    throw new RuntimeException("Error invoking registered function '" + name + "': " + e.getMessage(),
+                            e);
+                }
+            }
+        }
+
+        return super.callFunction(name, args, scopes);
+    }
+
+    private Object invoke(RegisteredFunction rf, List<Object> args, Deque<Map<String, Object>> scopes)
+            throws InvocationFailureException {
+        return null;
     }
 }
