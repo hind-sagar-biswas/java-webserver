@@ -83,7 +83,7 @@ public class FunctionLibrary extends com.hindbiswas.jhp.engine.FunctionLibrary {
         }
 
         RegisteredFunction func = new RegisteredFunction(function, injectScope);
-        registry.computeIfAbsent(name, k -> Collections.synchronizedList(new ArrayList<>())).add(func);
+        registry.computeIfAbsent(name, _ -> Collections.synchronizedList(new ArrayList<>())).add(func);
 
         return this;
     }
