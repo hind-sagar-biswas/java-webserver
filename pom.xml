@@ -29,8 +29,30 @@
     </repository>
   </distributionManagement>
 
+  <repositories>
+    <repository>
+      <id>github</id>
+      <name>GitHub hind-sagar-biswas JHP Package</name>
+      <url>https://maven.pkg.github.com/hind-sagar-biswas/java-hypertext-preprocessor</url>
+      <snapshots>
+          <enabled>true</enabled>
+      </snapshots>
+      <releases>
+          <enabled>true</enabled>
+      </releases>
+    </repository>
+  </repositories>
+
   <dependencies>
+    <!-- JHP Template Engine -->
     <dependency>
+      <groupId>com.github.hind-sagar-biswas</groupId>
+      <artifactId>jhp</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+    
+    <!-- Testing -->
+      <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
