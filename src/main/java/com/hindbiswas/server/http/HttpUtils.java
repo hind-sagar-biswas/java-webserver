@@ -66,6 +66,7 @@ public class HttpUtils {
         MIME_TYPES.put("ttf", "font/ttf");
         MIME_TYPES.put("mp4", "video/mp4");
         MIME_TYPES.put("pdf", "application/pdf");
+        MIME_TYPES.put("jhp", "application/x-jhp");
     }
 
     private static final Set<String> SUPPORTED_METHODS = Set.of("GET", "POST", "HEAD", "PUT", "PATCH", "DELETE");

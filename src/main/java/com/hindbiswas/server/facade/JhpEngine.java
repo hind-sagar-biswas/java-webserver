@@ -13,6 +13,8 @@ import com.hindbiswas.server.util.CollectionUtils;
 import com.hindbiswas.server.util.HtmlUtils;
 
 public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
+    private static JhpEngine instance = null;
+    
     public final class RenderException extends RuntimeException {
         public RenderException(String content) {
             super((debug) ? content : "Something went wrong!");
@@ -21,14 +23,49 @@ public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
     }
 
     private final FunctionLibrary functionLibrary;
+    private final String webRoot;
     private boolean debug = false;
 
-    public JhpEngine(WebServer server) throws IOException {
+    private JhpEngine(String webRoot) throws IOException {
         FunctionLibrary functionLibrary = new FunctionLibrary();
-        super(Settings.builder().base(server.getWebRoot()).issueHandleMode(IssueHandleMode.THROW).build(),
+        super(Settings.builder().base(webRoot).issueHandleMode(IssueHandleMode.THROW).build(),
                 functionLibrary);
+        this.webRoot = webRoot;
         this.functionLibrary = functionLibrary;
         registerUtilityFunctions();
+    }
+
+    /**
+     * Initialize the singleton instance with a web root.
+     * Must be called before getInstance().
+     * 
+     * @param webRoot The web root directory path
+     * @throws IOException If initialization fails
+     * @throws IllegalStateException If already initialized
+     */
+    public static synchronized void initialize(WebServer webServer) throws IOException {
+        if (instance != null) {
+            throw new IllegalStateException("JhpEngine already initialized");
+        }
+        instance = new JhpEngine(webServer.getWebRoot());
+    }
+
+    /**
+     * Get the singleton instance.
+     * 
+     * @return The JhpEngine instance, or null if not initialized
+     */
+    public static JhpEngine getInstance() {
+        return instance;
+    }
+
+    /**
+     * Check if the engine has been initialized.
+     * 
+     * @return true if initialized, false otherwise
+     */
+    public static boolean isInitialized() {
+        return instance != null;
     }
 
     private void registerUtilityFunctions() {
@@ -96,6 +133,10 @@ public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
         return functionLibrary;
     }
 
+    public String getWebRoot() {
+        return webRoot;
+    }
+
     @Override
     public String render(String pathTxt, com.hindbiswas.jhp.Context context) throws RenderException, IllegalArgumentException {
         if (!(context instanceof Context)) {
@@ -111,5 +152,9 @@ public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
 
     public String render(String pathTxt, Request req) throws RenderException {
         return render(pathTxt, new Context(req));
+    }
+
+    public String render(String pathTxt, Context context) throws RenderException {
+        return render(pathTxt, (com.hindbiswas.jhp.Context) context);
     }
 }

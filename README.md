@@ -7,6 +7,11 @@ A minimal yet flexible HTTP 1.1 server written from scratch in Java — no `Http
 * **Raw Socket Programming**: Built on `ServerSocket` and multithreaded `ConnectionHandler`
 * **HTTP Parsing**: Custom `Request` and `Response` objects
 * **Static File Serving**: Serve static files with correct MIME types via `HttpUtils`
+* **JHP Template Engine**: Integrated JHP (Java Hypertext Preprocessor) for dynamic server-side rendering
+  * Automatic `.jhp` file rendering (like Apache with PHP)
+  * `Response.render()` API for programmatic rendering
+  * Built-in utility functions (String, Math, Date, Collection, HTML)
+  * Access to request data via `__server`, `__header`, `__get`, `__post`
 * **Routing**:
 
   * `HybridRouter` for custom GET/POST/PUT/PATCH/DELETE route handlers
@@ -136,7 +141,58 @@ Response.redirect("/login");
 Response.text("Hello, World!");
 Response.json("{\"status\":\"ok\"}");
 Response.error(404);
+
+// JHP rendering
+Response.render(new File("/path/to/template.jhp"), context, server.getEngine());
+Response.render(new File("/path/to/template.jhp"), request, server.getEngine());
 ```
+
+## JHP Template Engine
+
+The server includes integrated JHP (Java Hypertext Preprocessor) support for dynamic server-side rendering.
+
+### Automatic .jhp File Rendering
+
+Place `.jhp` files in your webroot and they'll be automatically rendered:
+
+**File: `/home/user/www/index.jhp`**
+```html
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Hello from JHP!</h1>
+    <p>Request method: {{ __server.method }}</p>
+    <p>Current time: {{ currentDateTime() }}</p>
+    <p>Random number: {{ random() }}</p>
+</body>
+</html>
+```
+
+Access: `http://localhost:8080/index.jhp` - automatically rendered!
+
+### Manual Rendering with Response.render()
+
+```java
+router.get("/profile", request -> {
+    Context context = new Context(request);
+    context.add("username", "Alice");
+    context.add("role", "Admin");
+    
+    File template = new File(webRoot + "/profile.jhp");
+    return Response.render(template, context, server.getEngine());
+});
+```
+
+### Add Custom Functions
+
+```java
+server.getEngine().getFunctionLibrary().register("greet", (String name) -> {
+    return "Hello, " + name + "!";
+});
+// Use in template: {{ greet("World") }}
+```
+
+For complete JHP documentation, see [examples/JHP_INTEGRATION.md](examples/JHP_INTEGRATION.md)
 
 ## License
 

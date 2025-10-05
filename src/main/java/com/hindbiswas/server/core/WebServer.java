@@ -1,5 +1,6 @@
 package com.hindbiswas.server.core;
 
+import com.hindbiswas.server.facade.JhpEngine;
 import com.hindbiswas.server.handler.ConnectionHandler;
 import com.hindbiswas.server.routing.Router;
 import com.hindbiswas.server.routing.StaticRouter;
@@ -124,6 +125,17 @@ public class WebServer {
         if (router == null)
             router = new StaticRouter();
 
+        // Initialize JHP engine singleton if not already initialized
+        if (!JhpEngine.isInitialized()) {
+            try {
+                JhpEngine.initialize(this);
+            } catch (IOException e) {
+                System.err.println("Failed to initialize JHP engine: " + e.getMessage());
+                e.printStackTrace();
+                stop();
+            }
+        }
+
         try {
             serverSocket = new ServerSocket(port);
             serverSocket.setSoTimeout(3000); // 3-second timeout for accept()
@@ -213,5 +225,14 @@ public class WebServer {
      */
     public String getWebRoot() throws IOException {
         return webRoot.getCanonicalPath();
+    }
+
+    /**
+     * Gets the JHP template engine singleton instance.
+     *
+     * @return the JhpEngine instance, or null if not initialized
+     */
+    public static JhpEngine getEngine() {
+        return JhpEngine.getInstance();
     }
 }

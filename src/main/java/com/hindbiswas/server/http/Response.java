@@ -1,5 +1,8 @@
 package com.hindbiswas.server.http;
 
+import com.hindbiswas.server.facade.Context;
+import com.hindbiswas.server.facade.JhpEngine;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -104,6 +107,47 @@ public class Response {
         String msg = HttpUtils.getStatusMessage(statusCode);
         String json = "{\"error\": \"" + msg + "\", \"code\": " + statusCode + "}";
         return new Response(statusCode, "application/json", json.getBytes(StandardCharsets.UTF_8), null);
+    }
+
+    /** Static factory: render a JHP file with a Context. */
+    public static Response render(File file, Context context) throws IOException {
+        JhpEngine engine = JhpEngine.getInstance();
+        if (engine == null) {
+            throw new IllegalStateException("JhpEngine not initialized. Call JhpEngine.initialize() first.");
+        }
+        
+        try {
+            // Get the canonical path and extract relative path from webroot
+            String filePath = file.getCanonicalPath();
+            String webRoot = engine.getWebRoot();
+            
+            if (!filePath.startsWith(webRoot)) {
+                throw new IOException("File is not under web root");
+            }
+            
+            // Get relative path from webroot
+            String relativePath = filePath.substring(webRoot.length());
+            if (relativePath.startsWith("/") || relativePath.startsWith("\\")) {
+                relativePath = relativePath.substring(1);
+            }
+            
+            // Render the JHP file
+            String rendered = engine.render(relativePath, context);
+            byte[] data = rendered.getBytes(StandardCharsets.UTF_8);
+            return new Response(200, "text/html", data, null);
+        } catch (Exception e) {
+            // Return 500 error with the error message
+            String errorMsg = (e.getMessage() != null && !e.getMessage().isEmpty()) 
+                ? e.getMessage() 
+                : "JHP rendering failed";
+            byte[] errorBytes = errorMsg.getBytes(StandardCharsets.UTF_8);
+            return new Response(500, "text/html", errorBytes, null);
+        }
+    }
+
+    /** Static factory: render a JHP file with a Request. */
+    public static Response render(File file, Request request) throws IOException {
+        return render(file, new Context(request));
     }
 
     /** Convert to a low-level HttpResponse (for sending over socket). */

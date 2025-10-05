@@ -4,9 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.hindbiswas.server.facade.JhpEngine;
 
 /**
  * Represents an HTTP response to be sent to the client.
@@ -57,7 +60,8 @@ public class HttpResponse {
     /**
      * Constructs a response based on the HTTP request and the web root directory.
      * Serves static files, handles directories, decodes URL path, and returns
-     * appropriate status codes.
+     * appropriate status codes. Automatically renders .jhp files if JHP engine is
+     * initialized.
      *
      * @param request The parsed HTTP request object.
      * @param webRoot The base directory for serving files.
@@ -94,7 +98,27 @@ public class HttpResponse {
                 if (request.method.equals("HEAD")) {
                     this.body = new byte[0];
                 } else {
-                    this.body = Files.readAllBytes(resource.toPath());
+                    // Check if this is a .jhp file
+                    JhpEngine jhpEngine = JhpEngine.getInstance();
+                    if ("application/x-jhp".equals(this.mimeType) && jhpEngine != null) {
+                        // Render the JHP file
+                        try {
+                            String relativePath = resource.getPath();
+                            String rendered = jhpEngine.render(relativePath, request);
+                            this.body = rendered.getBytes(StandardCharsets.UTF_8);
+                            this.mimeType = "text/html"; // Change MIME type to HTML after rendering
+                        } catch (Exception e) {
+                            // JHP rendering failed - return 500 error
+                            this.statusCode = 500;
+                            String errorMsg = (e.getMessage() != null && !e.getMessage().isEmpty())
+                                    ? e.getMessage()
+                                    : "JHP rendering failed";
+                            this.body = errorMsg.getBytes(StandardCharsets.UTF_8);
+                            this.mimeType = "text/plain";
+                        }
+                    } else {
+                        this.body = Files.readAllBytes(resource.toPath());
+                    }
                 }
             } catch (IOException e) {
                 this.statusCode = 500;

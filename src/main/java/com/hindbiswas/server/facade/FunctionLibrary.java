@@ -94,6 +94,7 @@ public class FunctionLibrary extends com.hindbiswas.jhp.engine.FunctionLibrary {
         if (name == null)
             throw new IllegalArgumentException("Function name cannot be null");
 
+
         // First try to find the function in overload registry
         List<RegisteredFunction> funcs = registry.get(name);
         if (funcs != null && !funcs.isEmpty()) {
