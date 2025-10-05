@@ -161,6 +161,10 @@ public class HttpUtils {
      */
     public static File indexIfDirectory(File requested) {
         if (requested.isDirectory()) {
+            File indexJhp = new File(requested, "index.jhp");
+            if (indexJhp.exists()) {
+                return indexJhp;
+            }
             return new File(requested, "index.html");
         }
         return requested;
