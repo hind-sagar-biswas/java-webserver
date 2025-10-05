@@ -1,10 +1,10 @@
 package com.hindbiswas.server;
 
 /**
- * RouteHandeler: Handles a request.
+ * RouteHandler: Handles a request.
  */
 @FunctionalInterface
-public interface RouteHandeler {
+public interface RouteHandler {
 
     Response handle(Request request);
 }

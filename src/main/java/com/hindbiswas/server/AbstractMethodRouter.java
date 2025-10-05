@@ -9,7 +9,7 @@ import java.util.Map;
  * Stores route handlers for all HTTP methods.
  */
 public abstract class AbstractMethodRouter implements Router {
-    protected final Map<String, Map<String, RouteHandeler>> routes = new HashMap<>();
+    protected final Map<String, Map<String, RouteHandler>> routes = new HashMap<>();
 
     public AbstractMethodRouter() {
         for (String method : new String[] { "GET", "POST", "PUT", "PATCH", "DELETE" }) {
@@ -17,23 +17,23 @@ public abstract class AbstractMethodRouter implements Router {
         }
     }
 
-    public void get(String path, RouteHandeler handler) {
+    public void get(String path, RouteHandler handler) {
         routes.get("GET").put(path, handler);
     }
 
-    public void post(String path, RouteHandeler handler) {
+    public void post(String path, RouteHandler handler) {
         routes.get("POST").put(path, handler);
     }
 
-    public void put(String path, RouteHandeler handler) {
+    public void put(String path, RouteHandler handler) {
         routes.get("PUT").put(path, handler);
     }
 
-    public void patch(String path, RouteHandeler handler) {
+    public void patch(String path, RouteHandler handler) {
         routes.get("PATCH").put(path, handler);
     }
 
-    public void delete(String path, RouteHandeler handler) {
+    public void delete(String path, RouteHandler handler) {
         routes.get("DELETE").put(path, handler);
     }
 
@@ -43,10 +43,10 @@ public abstract class AbstractMethodRouter implements Router {
             return Response.error(400).toHttpResponse();
         }
 
-        Map<String, RouteHandeler> methodRoutes = routes.get(request.method.toUpperCase());
+        Map<String, RouteHandler> methodRoutes = routes.get(request.method.toUpperCase());
 
         if (methodRoutes != null) {
-            RouteHandeler handler = methodRoutes.get(request.path);
+            RouteHandler handler = methodRoutes.get(request.path);
             if (handler != null) {
                 return handler.handle(request).toHttpResponse();
             }
