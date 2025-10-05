@@ -10,12 +10,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class FunctionLibrary extends com.hindbiswas.jhp.engine.FunctionLibrary {
     private class RegisteredFunction {
-        final Object functional;
+        final Object function;
         final boolean injectScope;
         final MissingArgPolicy missingArgPolicy;
 
-        RegisteredFunction(Object functional, Boolean injectScope) {
-            this.functional = functional;
+        RegisteredFunction(Object function, Boolean injectScope) {
+            this.function = function;
             this.injectScope = injectScope;
             this.missingArgPolicy = missingArgumentPolicy;
         }
@@ -66,30 +66,31 @@ public class FunctionLibrary extends com.hindbiswas.jhp.engine.FunctionLibrary {
         this.missingArgumentPolicy = missingArgumentPolicy;
     }
 
-    public FunctionLibrary register(String name, Object functional) {
-        return register(name, functional, false);
+    public FunctionLibrary register(String name, Object function) {
+        return register(name, function, false);
     }
 
-    public FunctionLibrary registerScoped(String name, Object functional) {
-        return register(name, functional, true);
+    public FunctionLibrary registerScoped(String name, Object function) {
+        return register(name, function, true);
     }
 
-    private FunctionLibrary register(String name, Object functional, boolean injectScope) {
+    private FunctionLibrary register(String name, Object function, boolean injectScope) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Function name cannot be null/empty");
         }
-        if (functional == null) {
-            throw new IllegalArgumentException("Functional object cannot be null");
+        if (function == null) {
+            throw new IllegalArgumentException("Function object cannot be null");
         }
 
-        RegisteredFunction func = new RegisteredFunction(functional, injectScope);
+        RegisteredFunction func = new RegisteredFunction(function, injectScope);
         registry.computeIfAbsent(name, k -> Collections.synchronizedList(new ArrayList<>())).add(func);
 
         return this;
     }
 
     @Override
-    public Object callFunction(String name, List<Object> args, Deque<Map<String, Object>> scopes) {
+    public Object callFunction(String name, List<Object> args, Deque<Map<String, Object>> scopes)
+            throws RuntimeException {
         if (name == null)
             throw new IllegalArgumentException("Function name cannot be null");
 
@@ -113,8 +114,47 @@ public class FunctionLibrary extends com.hindbiswas.jhp.engine.FunctionLibrary {
         return super.callFunction(name, args, scopes);
     }
 
-    private Object invoke(RegisteredFunction rf, List<Object> args, Deque<Map<String, Object>> scopes)
+    private Object invoke(RegisteredFunction regFunc, List<Object> args, Deque<Map<String, Object>> scopes)
             throws InvocationFailureException {
+        MethodInfo info = getMethodInfo(regFunc.function);
         return null;
+    }
+
+    private MethodInfo getMethodInfo(Object function) {
+        Class<?> cls = function.getClass();
+        MethodInfo cached = methodInfoCache.get(cls);
+        if (cached != null)
+            return cached;
+        Class<?>[] interfaces = cls.getInterfaces();
+
+        Method sam = null;
+        if (interfaces.length != 0) {
+            for (Class<?> ifs : interfaces) {
+                Method[] methods = ifs.getMethods();
+                Method candidate = null;
+                int countNonDefault = 0;
+                for (Method m : methods) {
+                    if (m.isDefault() || java.lang.reflect.Modifier.isStatic(m.getModifiers()))
+                        continue;
+                    // skip methods from Object (toString, equals, hashCode)
+                    if (m.getDeclaringClass() == Object.class)
+                        continue;
+                    countNonDefault++;
+                    candidate = m;
+                }
+                if (countNonDefault == 1) {
+                    sam = candidate;
+                    break;
+                }
+            }
+        }
+
+        if (sam == null) {
+            throw new IllegalArgumentException("Unable to find SAM method for functional argument: " + cls.getName());
+        }
+
+        MethodInfo mi = new MethodInfo(sam);
+        methodInfoCache.put(cls, mi);
+        return mi;
     }
 }
