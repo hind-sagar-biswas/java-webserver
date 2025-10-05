@@ -205,4 +205,13 @@ public class WebServer {
         }
         return root;
     }
+
+    /**
+     * returns the webroot path string
+     *
+     * @return the path string to validate
+     */
+    public String getWebRoot() throws IOException {
+        return webRoot.getCanonicalPath();
+    }
 }
