@@ -108,13 +108,12 @@ public class HttpResponse {
                             this.body = rendered.getBytes(StandardCharsets.UTF_8);
                             this.mimeType = "text/html"; // Change MIME type to HTML after rendering
                         } catch (Exception e) {
-                            // JHP rendering failed - return 500 error
                             this.statusCode = 500;
                             String errorMsg = (e.getMessage() != null && !e.getMessage().isEmpty())
                                     ? e.getMessage()
                                     : "JHP rendering failed";
                             this.body = errorMsg.getBytes(StandardCharsets.UTF_8);
-                            this.mimeType = "text/plain";
+                            this.mimeType = "text/html";
                         }
                     } else {
                         this.body = Files.readAllBytes(resource.toPath());
@@ -185,7 +184,6 @@ public class HttpResponse {
         for (Map.Entry<String, String> header : headers.entrySet()) {
             sb.append(header.getKey()).append(": ").append(header.getValue()).append("\r\n");
         }
-        sb.append("\r\n");
         return sb.toString();
     }
 }
