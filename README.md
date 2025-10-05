@@ -77,7 +77,7 @@ This will start the server on port `8080` and serve files from `/home/user/www`.
 <dependency>
   <groupId>com.github.hind-sagar-biswas</groupId>
   <artifactId>java-webserver</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 ```
 
