@@ -1,6 +1,12 @@
 # Custom Java WebServer
 
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/hind-sagar-biswas/java-webserver/releases)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://www.oracle.com/java/)
+
 A minimal yet flexible HTTP 1.1 server written from scratch in Java — no `HttpServer` or prebuilt networking classes used.
+
+> **Latest Release:** v2.0.0 (2025-10-06) - Major release with JHP Template Engine integration
 
 ## Features
 
@@ -80,16 +86,29 @@ This will start the server on port `8080` and serve files from `/home/user/www`.
 
 ## Installation (Maven)
 
-#### Step 1: Configure GitHub Package Repository
+#### Step 1: Configure GitHub Package Repositories
 
-Add the GitHub package repository to your `pom.xml`:
+Add both the Java WebServer and JHP repositories to your `pom.xml`:
 
 ```xml
 <repositories>
+    <!-- Java WebServer Repository -->
     <repository>
-        <id>github</id>
+        <id>github-webserver</id>
         <name>GitHub hind-sagar-biswas Java WebServer</name>
         <url>https://maven.pkg.github.com/hind-sagar-biswas/java-webserver</url>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+        <releases>
+            <enabled>true</enabled>
+        </releases>
+    </repository>
+    <!-- JHP Template Engine Repository -->
+    <repository>
+        <id>github-jhp</id>
+        <name>GitHub hind-sagar-biswas JHP Package</name>
+        <url>https://maven.pkg.github.com/hind-sagar-biswas/java-hypertext-preprocessor</url>
         <snapshots>
             <enabled>true</enabled>
         </snapshots>
@@ -220,7 +239,23 @@ server.getEngine().getFunctionLibrary().register("greet", (String name) -> {
 // Use in template: {{ greet("World") }}
 ```
 
-For complete JHP documentation, see [examples/JHP_INTEGRATION.md](examples/JHP_INTEGRATION.md)
+For complete JHP documentation, see the [Wiki](https://github.com/hind-sagar-biswas/java-webserver/wiki)
+
+## What's New in v2.0.0
+
+🎉 **Major Features:**
+- JHP Template Engine integration for dynamic rendering
+- Built-in utility functions (String, Math, Date, Collection, HTML)
+- Facade pattern architecture (Context, FunctionLibrary, JhpEngine)
+- Enhanced error handling and MIME type support
+
+See [CHANGELOG.txt](CHANGELOG.txt) for complete release notes.
+
+## Documentation
+
+- **Wiki**: [https://github.com/hind-sagar-biswas/java-webserver/wiki](https://github.com/hind-sagar-biswas/java-webserver/wiki)
+- **Changelog**: [CHANGELOG.txt](CHANGELOG.txt)
+- **Examples**: [examples/](examples/)
 
 ## License
 
@@ -228,4 +263,12 @@ This project is open-source and available under the MIT License.
 
 ---
 
-Built with ❤️ by \[Hind Biswas] — because sometimes, you just gotta build it yourself to *really* learn it.
+Built with ❤️ by [Hind Biswas](https://github.com/hind-sagar-biswas) — because sometimes, you just gotta build it yourself to *really* learn it.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Support
+
+If you encounter any issues or have questions, please [open an issue](https://github.com/hind-sagar-biswas/java-webserver/issues).
