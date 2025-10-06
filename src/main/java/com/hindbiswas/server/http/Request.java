@@ -2,8 +2,8 @@ package com.hindbiswas.server.http;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -133,11 +133,29 @@ public class Request {
      * @throws IOException if reading fails
      */
     private Map<String, String> parseBody(BufferedReader reader) throws IOException {
+        // Validate content length
+        if (contentLength < 0) {
+            throw new IOException("Invalid Content-Length: negative value");
+        }
+        if (contentLength > 10 * 1024 * 1024) { // 10MB limit
+            throw new IOException("Content-Length too large: " + contentLength);
+        }
+        
         char[] buffer = new char[contentLength];
-        int read = reader.read(buffer);
-        if (read < 0)
+        int totalRead = 0;
+        
+        // Read all bytes, handling partial reads
+        while (totalRead < contentLength) {
+            int read = reader.read(buffer, totalRead, contentLength - totalRead);
+            if (read < 0) {
+                break; // End of stream
+            }
+            totalRead += read;
+        }
+        
+        if (totalRead == 0)
             return new HashMap<>();
-        String body = new String(buffer, 0, read);
+        String body = new String(buffer, 0, totalRead);
 
         String contentType = headers.get("content-type");
         if (contentType == null)
@@ -149,7 +167,7 @@ public class Request {
             for (String pair : pairs) {
                 String[] kv = pair.split("=", 2);
                 if (kv.length == 2) {
-                    formData.put(URLDecoder.decode(kv[0], "UTF-8"), URLDecoder.decode(kv[1], "UTF-8"));
+                    formData.put(URLDecoder.decode(kv[0], StandardCharsets.UTF_8), URLDecoder.decode(kv[1], StandardCharsets.UTF_8));
                 }
             }
             return formData;
@@ -177,11 +195,7 @@ public class Request {
         String[] pairs = query.split("&");
         for (String pair : pairs) {
             String[] kv = pair.split("=", 2);
-            try {
-                params.put(URLDecoder.decode(kv[0], "UTF-8"), kv.length > 1 ? URLDecoder.decode(kv[1], "UTF-8") : "");
-            } catch (UnsupportedEncodingException e) {
-                throw new RuntimeException("Failed to decode query parameter", e);
-            }
+            params.put(URLDecoder.decode(kv[0], StandardCharsets.UTF_8), kv.length > 1 ? URLDecoder.decode(kv[1], StandardCharsets.UTF_8) : "");
         }
         return params;
     }

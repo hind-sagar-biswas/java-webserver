@@ -103,7 +103,19 @@ public class HttpResponse {
                     if ("application/x-jhp".equals(this.mimeType) && jhpEngine != null) {
                         // Render the JHP file
                         try {
-                            String relativePath = resource.getPath();
+                            // Calculate relative path from webroot
+                            String filePath = resource.getCanonicalPath();
+                            String webRootPath = webRoot.getCanonicalPath();
+                            
+                            if (!filePath.startsWith(webRootPath)) {
+                                throw new IOException("File is not under web root");
+                            }
+                            
+                            String relativePath = filePath.substring(webRootPath.length());
+                            if (relativePath.startsWith("/") || relativePath.startsWith("\\")) {
+                                relativePath = relativePath.substring(1);
+                            }
+                            
                             String rendered = jhpEngine.render(relativePath, request);
                             this.body = rendered.getBytes(StandardCharsets.UTF_8);
                             this.mimeType = "text/html"; // Change MIME type to HTML after rendering
@@ -157,15 +169,18 @@ public class HttpResponse {
 
     /**
      * Returns the raw body bytes of the response.
-     * If an error status is set (non-200), returns a generated HTML error page.
+     * If an error status is set (4xx or 5xx), returns a generated HTML error page.
+     * Preserves body for successful responses and redirects.
      *
      * @return Byte array of the response body.
      */
     public byte[] getBody() {
-        if (statusCode == 200) {
-            return body;
+        // Only generate error pages for actual error codes (4xx, 5xx)
+        // Preserve body for 2xx (success) and 3xx (redirects)
+        if (statusCode >= 400) {
+            return HttpUtils.buildErrorPage(statusCode);
         }
-        return HttpUtils.buildErrorPage(statusCode);
+        return body != null ? body : new byte[0];
     }
 
     /**
