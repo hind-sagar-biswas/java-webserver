@@ -28,35 +28,39 @@ A minimal yet flexible HTTP 1.1 server written from scratch in Java — no `Http
 ├── LICENSE
 ├── pom.xml
 ├── README.md
-├── src
-│   ├── main
-│   │   └── java
-│   │       └── com
-│   │           └── hindbiswas
-│   │               └── server
-│   │                   ├── App.java
-│   │                   ├── core/
-│   │                   │   └── WebServer.java
-│   │                   ├── http/
-│   │                   │   ├── HttpResponse.java
-│   │                   │   ├── HttpUtils.java
-│   │                   │   ├── Request.java
-│   │                   │   └── Response.java
-│   │                   ├── routing/
-│   │                   │   ├── AbstractMethodRouter.java
-│   │                   │   ├── ApiRouter.java
-│   │                   │   ├── HybridRouter.java
-│   │                   │   ├── Router.java
-│   │                   │   └── StaticRouter.java
-│   │                   └── handler/
-│   │                       ├── ConnectionHandler.java
-│   │                       └── RouteHandler.java
-│   └── test
-│       └── java
-│           └── com
-│               └── hindbiswas
-│                   └── server
-│                       └── AppTest.java
+└── src
+    └── main
+        └── java
+            └── com
+                └── hindbiswas
+                    └── server
+                        ├── App.java
+                        ├── core
+                        │   └── WebServer.java
+                        ├── facade
+                        │   ├── Context.java
+                        │   ├── FunctionLibrary.java
+                        │   └── JhpEngine.java
+                        ├── handler
+                        │   ├── ConnectionHandler.java
+                        │   └── RouteHandler.java
+                        ├── http
+                        │   ├── HttpResponse.java
+                        │   ├── HttpUtils.java
+                        │   ├── Request.java
+                        │   └── Response.java
+                        ├── routing
+                        │   ├── AbstractMethodRouter.java
+                        │   ├── ApiRouter.java
+                        │   ├── HybridRouter.java
+                        │   ├── Router.java
+                        │   └── StaticRouter.java
+                        └── util
+                            ├── CollectionUtils.java
+                            ├── DateUtils.java
+                            ├── HtmlUtils.java
+                            ├── MathUtils.java
+                            └── StringUtils.java
 
 ## 🏁 Getting Started
 
@@ -76,20 +80,44 @@ This will start the server on port `8080` and serve files from `/home/user/www`.
 
 ## Installation (Maven)
 
-### Add the Dependency to your `pom.xml` file
+#### Step 1: Configure GitHub Package Repository
+
+Add the GitHub package repository to your `pom.xml`:
 
 ```xml
-<dependency>
-  <groupId>com.github.hind-sagar-biswas</groupId>
-  <artifactId>java-webserver</artifactId>
-  <version>1.2.0</version>
-</dependency>
+<repositories>
+    <repository>
+        <id>github</id>
+        <name>GitHub hind-sagar-biswas Java WebServer</name>
+        <url>https://maven.pkg.github.com/hind-sagar-biswas/java-webserver</url>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+        <releases>
+            <enabled>true</enabled>
+        </releases>
+    </repository>
+</repositories>
 ```
 
-### Run Install
+#### Step 2: Add the Dependency
+
+Add the Java WebServer dependency:
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>com.github.hind-sagar-biswas</groupId>
+        <artifactId>java-webserver</artifactId>
+        <version>2.0.0</version>
+    </dependency>
+</dependencies>
+```
+
+#### Step 3: Install Dependencies
 
 ```bash
-mvn install
+mvn clean install
 ```
 
 ## Example Usage
