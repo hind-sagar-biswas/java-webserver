@@ -1,19 +1,24 @@
 package com.hindbiswas.server.session;
 
+import java.io.Serializable;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.hindbiswas.server.util.RandomUtils;
 
-public class Session {
+
+public class Session implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private final String id;
     private final Map<String, Object> attributes = new ConcurrentHashMap<>();
     private final long creationTime;
-    private long lastAccessedTime;
-    private int maxInactiveInterval = 1800; // 30 minutes
+    private volatile long lastAccessedTime;
+    private volatile int maxInactiveInterval; // in seconds
 
     public Session(int maxInactiveInterval) {
-        this.id = RandomUtils.ulid.nextULID();
+        this.id = RandomUtils.ulid.apply();
         this.creationTime = System.currentTimeMillis();
         this.lastAccessedTime = this.creationTime;
         this.maxInactiveInterval = maxInactiveInterval;
@@ -45,8 +50,33 @@ public class Session {
 
     public void invalidate() {
         attributes.clear();
+        this.maxInactiveInterval = 0; // Mark as expired
+    }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Session session = (Session) o;
+        return id.equals(session.id);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 
+    public boolean isExpired() {
+        if (maxInactiveInterval < 0) {
+            return false; // Never expires
+        }
+        return (System.currentTimeMillis() - lastAccessedTime) > (maxInactiveInterval * 1000L);
+    }
+    
+    public void updateLastAccessedTime() {
+        this.lastAccessedTime = System.currentTimeMillis();
+    }
+    
     public Object get(String name) {
         return attributes.get(name);
     }
@@ -62,10 +92,4 @@ public class Session {
     public boolean exists(String name) {
         return attributes.containsKey(name);
     }
-
-    public boolean isValid() {
-        return System.currentTimeMillis() - lastAccessedTime < maxInactiveInterval * 1000;
-    }
-
-    // Methods: getAttribute(), setAttribute(), invalidate()
 }
