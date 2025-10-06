@@ -8,13 +8,14 @@ import com.hindbiswas.server.core.WebServer;
 import com.hindbiswas.server.http.Request;
 import com.hindbiswas.server.util.StringUtils;
 import com.hindbiswas.server.util.MathUtils;
+import com.hindbiswas.server.util.RandomUtils;
 import com.hindbiswas.server.util.DateUtils;
 import com.hindbiswas.server.util.CollectionUtils;
 import com.hindbiswas.server.util.HtmlUtils;
 
 public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
     private static JhpEngine instance = null;
-    
+
     public final class RenderException extends RuntimeException {
         public RenderException(String content) {
             super((debug) ? content : "Something went wrong!");
@@ -40,7 +41,7 @@ public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
      * Must be called before getInstance().
      * 
      * @param webRoot The web root directory path
-     * @throws IOException If initialization fails
+     * @throws IOException           If initialization fails
      * @throws IllegalStateException If already initialized
      */
     public static synchronized void initialize(WebServer webServer) throws IOException {
@@ -93,8 +94,14 @@ public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
         functionLibrary.register("min", MathUtils.min);
         functionLibrary.register("pow", MathUtils.pow);
         functionLibrary.register("sqrt", MathUtils.sqrt);
-        functionLibrary.register("random", MathUtils.random);
         functionLibrary.register("clamp", MathUtils.clamp);
+
+        // Random utilities
+        functionLibrary.register("ulid", RandomUtils.ulid);
+        functionLibrary.register("uuid", RandomUtils.uuid);
+        functionLibrary.register("random", RandomUtils.random);
+        functionLibrary.register("random", RandomUtils.randomMax);
+        functionLibrary.register("random", RandomUtils.randomRange);
 
         // Date utilities
         functionLibrary.register("now", DateUtils.now);
@@ -138,7 +145,8 @@ public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
     }
 
     @Override
-    public String render(String pathTxt, com.hindbiswas.jhp.Context context) throws RenderException, IllegalArgumentException {
+    public String render(String pathTxt, com.hindbiswas.jhp.Context context)
+            throws RenderException, IllegalArgumentException {
         if (!(context instanceof Context)) {
             throw new IllegalArgumentException("Invalid context type");
         }

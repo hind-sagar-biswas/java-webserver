@@ -50,7 +50,14 @@
       <artifactId>jhp</artifactId>
       <version>1.0.0</version>
     </dependency>
-    
+
+    <!-- ULID -->
+    <dependency>
+      <groupId>de.huxhorn.sulky</groupId>
+      <artifactId>de.huxhorn.sulky.ulid</artifactId>
+      <version>8.2.0</version>
+    </dependency>
+
     <!-- Testing -->
       <dependency>
       <groupId>junit</groupId>

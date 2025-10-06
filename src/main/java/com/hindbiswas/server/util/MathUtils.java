@@ -70,13 +70,6 @@ public class MathUtils {
         double apply(Number n);
     }
 
-    /**
-     * Returns a random number between 0 (inclusive) and max (exclusive).
-     */
-    @FunctionalInterface
-    public interface Random {
-        int apply(int max);
-    }
 
     /**
      * Clamps a number between min and max.
@@ -107,7 +100,6 @@ public class MathUtils {
         return Math.pow(b, e);
     };
     public static final Sqrt sqrt = n -> n == null ? 0 : Math.sqrt(n.doubleValue());
-    public static final Random random = max -> max <= 0 ? 0 : (int) (Math.random() * max);
     public static final Clamp clamp = (value, min, max) -> {
         double v = value == null ? 0 : value.doubleValue();
         double minVal = min == null ? 0 : min.doubleValue();
