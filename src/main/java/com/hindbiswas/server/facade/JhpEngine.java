@@ -12,6 +12,7 @@ import com.hindbiswas.server.util.RandomUtils;
 import com.hindbiswas.server.util.DateUtils;
 import com.hindbiswas.server.util.CollectionUtils;
 import com.hindbiswas.server.util.HtmlUtils;
+import com.hindbiswas.server.util.SessionUtils;
 
 public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
     private static JhpEngine instance = null;
@@ -126,6 +127,15 @@ public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
         functionLibrary.register("truncate", HtmlUtils.truncate);
         functionLibrary.register("urlEncode", HtmlUtils.urlEncode);
         functionLibrary.register("urlDecode", HtmlUtils.urlDecode);
+        
+        // Session utilities (scoped functions that need access to request)
+        functionLibrary.registerScoped("sessionGet", SessionUtils.sessionGet);
+        functionLibrary.registerScoped("sessionSet", SessionUtils.sessionSet);
+        functionLibrary.registerScoped("sessionRemove", SessionUtils.sessionRemove);
+        functionLibrary.registerScoped("sessionExists", SessionUtils.sessionExists);
+        functionLibrary.registerScoped("sessionInvalidate", SessionUtils.sessionInvalidate);
+        functionLibrary.registerScoped("sessionId", SessionUtils.sessionId);
+        functionLibrary.registerScoped("sessionActive", SessionUtils.sessionActive);
     }
 
     public void setDebugMode(boolean debug) {

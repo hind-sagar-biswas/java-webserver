@@ -14,20 +14,21 @@ import java.nio.file.Path;
 public class SessionManager {
     private final SessionStorage storage;
     private final ScheduledExecutorService cleanupScheduler;
-    private final long cleanupIntervalSeconds;
-    private final int defaultMaxInactiveInterval;
+    private final SessionConfig config;
 
-    public SessionManager(StorageType storageType, Path storagePath, 
-            long cleanupIntervalSeconds, int defaultMaxInactiveInterval) {
-        if (cleanupIntervalSeconds <= 0) {
+    public SessionManager(SessionConfig config) {
+        if (config == null) {
+            config = new SessionConfig();
+        }
+        
+        if (config.getCleanupIntervalSeconds() <= 0) {
             throw new IllegalArgumentException("Cleanup interval must be positive");
         }
 
-        this.cleanupIntervalSeconds = cleanupIntervalSeconds;
-        this.defaultMaxInactiveInterval = defaultMaxInactiveInterval > 0 ? defaultMaxInactiveInterval : 1800; // Default 30 minutes
+        this.config = config;
 
         // Initialize the appropriate storage
-        this.storage = createStorage(storageType, storagePath);
+        this.storage = createStorage(config.getStorageType(), config.getStoragePath());
         this.storage.initialize();
 
         // Setup background cleanup
@@ -41,11 +42,11 @@ public class SessionManager {
     }
     
     public SessionManager() {
-        this(StorageType.MEMORY, null, 120, 1800);
+        this(new SessionConfig());
     }
     
     public Session createSession() {
-        return createSession(defaultMaxInactiveInterval);
+        return createSession(config.getDefaultMaxInactiveInterval());
     }
 
     public synchronized Session createSession(int maxInactiveInterval) {
@@ -103,8 +104,8 @@ public class SessionManager {
     private void startCleanupTask() {
         cleanupScheduler.scheduleAtFixedRate(
             this::cleanupExpiredSessions,
-            cleanupIntervalSeconds,
-            cleanupIntervalSeconds,
+            config.getCleanupIntervalSeconds(),
+            config.getCleanupIntervalSeconds(),
             TimeUnit.SECONDS
         );
     }
@@ -118,5 +119,9 @@ public class SessionManager {
         } catch (Exception e) {
             System.err.println("Error during session cleanup: " + e.getMessage());
         }
+    }
+    
+    public SessionConfig getConfig() {
+        return config;
     }
 }
