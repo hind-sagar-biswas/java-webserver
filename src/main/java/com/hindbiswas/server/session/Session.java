@@ -92,4 +92,12 @@ public class Session implements Serializable {
     public boolean exists(String name) {
         return attributes.containsKey(name);
     }
+    
+    /**
+     * Returns a copy of the session attributes map.
+     * Used by Context to create session proxy for JHP templates.
+     */
+    public Map<String, Object> getAttributes() {
+        return new ConcurrentHashMap<>(attributes);
+    }
 }

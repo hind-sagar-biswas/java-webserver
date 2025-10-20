@@ -45,18 +45,24 @@ public class Context extends com.hindbiswas.jhp.Context {
         super.add("__header", (req.headers == null) ? new HashMap<>() : new HashMap<>(req.headers));
         super.add("__get", (req.params == null) ? new HashMap<>() : new HashMap<>(req.params));
         super.add("__post", (req.body == null ? new HashMap<>() : new HashMap<>(req.body)));
-        
+
         Map<String, String> cookieValues = new HashMap<>();
         if (req.cookies != null) {
             req.cookies.forEach((name, cookie) -> cookieValues.put(name, cookie.getValue()));
         }
         super.add("__cookie", cookieValues);
-        
-        // Add session to context if it exists
+
+        // Add session proxy to context if it exists
+        // JHP Context converts objects to Maps, so we create a Map-based proxy
         if (req.getSession() != null) {
-            super.add("__session", req.getSession());
+            Map<String, Object> sessionProxy = new HashMap<>();
+            sessionProxy.put("_id", req.getSession().getId());
+            sessionProxy.put("_attributes", req.getSession().getAttributes());
+            sessionProxy.put("_request", req); // Store request reference for mutations
+            
+            super.add("__session", sessionProxy);
         }
-        
+
         // Add request object for SessionUtils and other utilities
         super.add("__request__", req);
     }

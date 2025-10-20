@@ -453,4 +453,15 @@ public class Request {
         }
         return sessionManager.createDeleteCookie();
     }
+    
+    /**
+     * Saves the current session to storage.
+     * Call this after modifying session attributes to persist changes.
+     * This is especially important before redirects or when session data must be preserved.
+     */
+    public void saveSession() {
+        if (session != null && sessionManager != null) {
+            sessionManager.saveSession(session);
+        }
+    }
 }

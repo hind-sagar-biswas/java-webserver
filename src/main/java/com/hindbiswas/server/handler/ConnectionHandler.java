@@ -91,6 +91,9 @@ public class ConnectionHandler implements Runnable {
 
                     response = router.resolve(request, webRoot);
 
+                    // Automatically save session if it exists (persist any modifications)
+                    request.saveSession();
+
                     // Set session cookie if session exists
                     Cookie sessionCookie = request.getSessionCookie();
                     if (sessionCookie != null) {

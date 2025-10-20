@@ -78,15 +78,16 @@ public class SessionUtils {
     // Implementation instances
 
     public static final SessionGet sessionGet = (key, scopes) -> {
-        Request request = extractRequest(scopes);
-        if (request == null)
+        Map<String, Object> sessionProxy = extractSessionProxy(scopes);
+        if (sessionProxy == null)
             return null;
 
-        Session session = request.getSession();
-        if (session == null)
+        @SuppressWarnings("unchecked")
+        Map<String, Object> attributes = (Map<String, Object>) sessionProxy.get("_attributes");
+        if (attributes == null)
             return null;
 
-        return session.get(key);
+        return attributes.get(key);
     };
 
     public static final SessionSet sessionSet = (key, value, scopes) -> {
@@ -95,7 +96,9 @@ public class SessionUtils {
             return;
 
         Session session = request.getSession();
-        session.set(key, value);
+        if (session != null) {
+            session.set(key, value);
+        }
     };
 
     public static final SessionRemove sessionRemove = (key, scopes) -> {
@@ -110,15 +113,16 @@ public class SessionUtils {
     };
 
     public static final SessionExists sessionExists = (key, scopes) -> {
-        Request request = extractRequest(scopes);
-        if (request == null)
+        Map<String, Object> sessionProxy = extractSessionProxy(scopes);
+        if (sessionProxy == null)
             return false;
 
-        Session session = request.getSession();
-        if (session == null)
+        @SuppressWarnings("unchecked")
+        Map<String, Object> attributes = (Map<String, Object>) sessionProxy.get("_attributes");
+        if (attributes == null)
             return false;
 
-        return session.exists(key);
+        return attributes.containsKey(key);
     };
 
     public static final SessionInvalidate sessionInvalidate = (scopes) -> {
@@ -130,25 +134,38 @@ public class SessionUtils {
     };
 
     public static final SessionId sessionId = (scopes) -> {
-        Request request = extractRequest(scopes);
-        if (request == null)
+        Map<String, Object> sessionProxy = extractSessionProxy(scopes);
+        if (sessionProxy == null)
             return null;
 
-        Session session = request.getSession();
-        if (session == null)
-            return null;
-
-        return session.getId();
+        return (String) sessionProxy.get("_id");
     };
 
     public static final SessionActive sessionActive = (scopes) -> {
-        Request request = extractRequest(scopes);
-        if (request == null)
-            return false;
-
-        Session session = request.getSession();
-        return session != null;
+        Map<String, Object> sessionProxy = extractSessionProxy(scopes);
+        return sessionProxy != null;
     };
+
+    /**
+     * Extracts the session proxy Map from JHP scopes.
+     * The session proxy contains: _id, _attributes, _request
+     */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> extractSessionProxy(Deque<Map<String, Object>> scopes) {
+        if (scopes == null || scopes.isEmpty()) {
+            return null;
+        }
+
+        // Search through scopes for __session
+        for (Map<String, Object> scope : scopes) {
+            Object sess = scope.get("__session");
+            if (sess instanceof Map) {
+                return (Map<String, Object>) sess;
+            }
+        }
+
+        return null;
+    }
 
     /**
      * Extracts the Request object from JHP scopes.

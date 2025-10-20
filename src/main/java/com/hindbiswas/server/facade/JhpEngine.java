@@ -128,14 +128,14 @@ public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
         functionLibrary.register("urlEncode", HtmlUtils.urlEncode);
         functionLibrary.register("urlDecode", HtmlUtils.urlDecode);
 
-        // Session Utilities
-        functionLibrary.register("sessionGet", SessionUtils.sessionGet);
-        functionLibrary.register("sessionSet", SessionUtils.sessionSet);
-        functionLibrary.register("sessionRemove", SessionUtils.sessionRemove);
-        functionLibrary.register("sessionExists", SessionUtils.sessionExists);
-        functionLibrary.register("sessionInvalidate", SessionUtils.sessionInvalidate);
-        functionLibrary.register("sessionId", SessionUtils.sessionId);
-        functionLibrary.register("sessionActive", SessionUtils.sessionActive);
+        // Session Utilities - use registerScoped to pass scopes parameter
+        functionLibrary.registerScoped("sessionGet", SessionUtils.sessionGet);
+        functionLibrary.registerScoped("sessionSet", SessionUtils.sessionSet);
+        functionLibrary.registerScoped("sessionRemove", SessionUtils.sessionRemove);
+        functionLibrary.registerScoped("sessionExists", SessionUtils.sessionExists);
+        functionLibrary.registerScoped("sessionInvalidate", SessionUtils.sessionInvalidate);
+        functionLibrary.registerScoped("sessionId", SessionUtils.sessionId);
+        functionLibrary.registerScoped("sessionActive", SessionUtils.sessionActive);
     }
 
     public void setDebugMode(boolean debug) {

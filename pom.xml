@@ -151,6 +151,9 @@
           <version>3.1.0</version>
           <configuration>
             <mainClass>com.hindbiswas.server.App</mainClass>
+            <arguments>
+              <argument>--enable-native-access=ALL-UNNAMED</argument>
+            </arguments>
           </configuration>
         </plugin>
       </plugins>

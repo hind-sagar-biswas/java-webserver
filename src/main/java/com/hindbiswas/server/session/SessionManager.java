@@ -93,6 +93,18 @@ public class SessionManager {
         });
     }
     
+    /**
+     * Saves a session to storage.
+     * Call this after modifying session attributes to persist changes.
+     * 
+     * @param session The session to save
+     */
+    public synchronized void saveSession(Session session) {
+        if (session != null) {
+            storage.save(session);
+        }
+    }
+    
     public synchronized void invalidate(String id) {
         if (id != null && !id.isEmpty()) {
             storage.delete(id);
