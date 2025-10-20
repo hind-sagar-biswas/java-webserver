@@ -79,6 +79,8 @@ public class HttpResponse {
         this.mimeType = mimeType;
         this.headers = headers;
         this.cookies = cookies != null ? cookies : new ArrayList<>();
+
+        System.out.println("Response created: " + this);
     }
 
     /**
@@ -227,11 +229,22 @@ public class HttpResponse {
      */
     @Override
     public String toString() {
-        headers.putIfAbsent("Content-Type", mimeType + (mimeType.startsWith("text/") ? "; charset=UTF-8" : ""));
-        headers.putIfAbsent("Content-Length", String.valueOf(getBody().length));
-
         StringBuilder sb = new StringBuilder();
         sb.append("HTTP/1.1 ").append(statusCode).append(" ").append(statusMessage).append("\r\n");
+        
+        // Add Content-Type if not already present
+        if (!headers.containsKey("Content-Type")) {
+            sb.append("Content-Type: ").append(mimeType);
+            if (mimeType.startsWith("text/")) {
+                sb.append("; charset=UTF-8");
+            }
+            sb.append("\r\n");
+        }
+        
+        // Add Content-Length if not already present
+        if (!headers.containsKey("Content-Length")) {
+            sb.append("Content-Length: ").append(getBody().length).append("\r\n");
+        }
         
         // Add regular headers
         for (Map.Entry<String, String> header : headers.entrySet()) {

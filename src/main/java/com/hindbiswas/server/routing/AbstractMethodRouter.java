@@ -53,10 +53,13 @@ public abstract class AbstractMethodRouter implements Router {
         if (methodRoutes != null) {
             RouteHandler handler = methodRoutes.get(request.path);
             if (handler != null) {
-                return handler.handle(request).toHttpResponse();
+                try {
+                    return handler.handle(request).toHttpResponse();
+                } catch (Exception e) {
+                    return Response.error(500).toHttpResponse();
+                }
             }
         }
-
         return fallback(request, webRoot);
     }
 

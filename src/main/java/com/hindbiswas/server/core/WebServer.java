@@ -97,6 +97,18 @@ public class WebServer {
     }
 
     /**
+     * Constructs a WebServer with a custom port, web root and session config.
+     *
+     * @param port    the port number to listen on
+     * @param webRoot the root directory to serve files from
+     * @param sessionConfig the session config to use
+     * @throws IllegalArgumentException if the directory is invalid
+     */
+    public WebServer(int port, String webRoot, SessionConfig sessionConfig) throws IllegalArgumentException {
+        this(port, 10, webRoot, sessionConfig);
+    }
+
+    /**
      * Constructs a WebServer with a custom port and maximum thread count.
      *
      * @param port       the port number to listen on

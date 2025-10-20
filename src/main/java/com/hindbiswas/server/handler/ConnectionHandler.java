@@ -86,7 +86,9 @@ public class ConnectionHandler implements Runnable {
                 try {
                     // Request now handles session retrieval automatically
                     request = new Request(reader, sessionManager);
-                    
+
+                    System.out.println("[INCOMING]: " + request);
+
                     response = router.resolve(request, webRoot);
 
                     // Set session cookie if session exists
@@ -94,8 +96,6 @@ public class ConnectionHandler implements Runnable {
                     if (sessionCookie != null) {
                         response.addCookie(sessionCookie);
                     }
-
-                    System.out.println("[INCOMING]: " + request);
                     System.out.println("[OUTGOING]: " + response);
                 } catch (IOException e) {
                     response = Response.error(400).toHttpResponse();

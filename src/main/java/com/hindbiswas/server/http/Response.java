@@ -28,7 +28,8 @@ public class Response {
     /**
      * Master constructor: initializes all fields and builds headers.
      */
-    private Response(int statusCode, String mimeType, byte[] body, Map<String, String> extraHeaders, List<Cookie> cookies) {
+    private Response(int statusCode, String mimeType, byte[] body, Map<String, String> extraHeaders,
+            List<Cookie> cookies) {
         if (!HttpUtils.isStatusCodeSupported(statusCode)) {
             throw new IllegalArgumentException("Unsupported status code: " + statusCode);
         }
@@ -74,6 +75,14 @@ public class Response {
         byte[] data = Files.readAllBytes(resource.toPath());
         String mime = HttpUtils.guessMime(resource.getName());
         return new Response(200, mime, data);
+    }
+
+    /** Static factory: serve a file with cookies. */
+    public static Response file(File file, List<Cookie> cookies) throws IOException {
+        File resource = HttpUtils.indexIfDirectory(file.getCanonicalFile());
+        byte[] data = Files.readAllBytes(resource.toPath());
+        String mime = HttpUtils.guessMime(resource.getName());
+        return new Response(200, mime, data, null, cookies);
     }
 
     /** Static factory: plain text response. */
@@ -134,31 +143,31 @@ public class Response {
         if (engine == null) {
             throw new IllegalStateException("JhpEngine not initialized. Call JhpEngine.initialize() first.");
         }
-        
+
         try {
             // Get the canonical path and extract relative path from webroot
             String filePath = file.getCanonicalPath();
             String webRoot = engine.getWebRoot();
-            
+
             if (!filePath.startsWith(webRoot)) {
                 throw new IOException("File is not under web root");
             }
-            
+
             // Get relative path from webroot
             String relativePath = filePath.substring(webRoot.length());
             if (relativePath.startsWith("/") || relativePath.startsWith("\\")) {
                 relativePath = relativePath.substring(1);
             }
-            
+
             // Render the JHP file
             String rendered = engine.render(relativePath, context);
             byte[] data = rendered.getBytes(StandardCharsets.UTF_8);
             return new Response(200, "text/html", data);
         } catch (Exception e) {
             // Return 500 error with the error message
-            String errorMsg = (e.getMessage() != null && !e.getMessage().isEmpty()) 
-                ? e.getMessage() 
-                : "JHP rendering failed";
+            String errorMsg = (e.getMessage() != null && !e.getMessage().isEmpty())
+                    ? e.getMessage()
+                    : "JHP rendering failed";
             byte[] errorBytes = errorMsg.getBytes(StandardCharsets.UTF_8);
             return new Response(500, "text/html", errorBytes);
         }
