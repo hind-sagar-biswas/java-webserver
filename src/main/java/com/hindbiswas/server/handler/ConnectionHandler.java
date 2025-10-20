@@ -88,7 +88,7 @@ public class ConnectionHandler implements Runnable {
                     // Request now handles session retrieval automatically
                     request = new Request(reader, sessionManager);
 
-                    Logger.log(request.method + " " + request.path + " " + request.version);
+                    Logger.log(request.method + " " + request.path);
                     Logger.dbg("[INCOMING]: " + request);
 
                     response = router.resolve(request, webRoot);
