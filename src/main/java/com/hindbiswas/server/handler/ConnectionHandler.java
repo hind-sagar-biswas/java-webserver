@@ -5,6 +5,7 @@ import com.hindbiswas.server.http.HttpResponse;
 import com.hindbiswas.server.http.HttpUtils;
 import com.hindbiswas.server.http.Request;
 import com.hindbiswas.server.http.Response;
+import com.hindbiswas.server.logger.Logger;
 import com.hindbiswas.server.routing.Router;
 import com.hindbiswas.server.routing.StaticRouter;
 import com.hindbiswas.server.session.SessionManager;
@@ -87,7 +88,8 @@ public class ConnectionHandler implements Runnable {
                     // Request now handles session retrieval automatically
                     request = new Request(reader, sessionManager);
 
-                    System.out.println("[INCOMING]: " + request);
+                    Logger.log(request.method + " " + request.path + " " + request.version);
+                    Logger.dbg("[INCOMING]: " + request);
 
                     response = router.resolve(request, webRoot);
 
@@ -99,7 +101,7 @@ public class ConnectionHandler implements Runnable {
                     if (sessionCookie != null) {
                         response.addCookie(sessionCookie);
                     }
-                    System.out.println("[OUTGOING]: " + response);
+                    Logger.dbg("[OUTGOING]: " + response);
                 } catch (IOException e) {
                     response = Response.error(400).toHttpResponse();
                     HttpUtils.sendResponse(out, null, response);
@@ -115,9 +117,9 @@ public class ConnectionHandler implements Runnable {
                 }
             }
         } catch (SocketTimeoutException e) {
-            System.out.println("[TIMEOUT]: " + client.getRemoteSocketAddress());
+            Logger.dbg("[TIMEOUT]: " + client.getRemoteSocketAddress());
         } catch (IOException e) {
-            e.printStackTrace();
+            Logger.err("[ERROR]: " + e.getMessage());
         } finally {
             try {
                 client.close();

@@ -1,6 +1,7 @@
 package com.hindbiswas.server.session;
 
 import com.hindbiswas.server.http.Cookie;
+import com.hindbiswas.server.logger.Logger;
 import com.hindbiswas.server.session.storage.SessionStorage;
 import com.hindbiswas.server.session.storage.InMemorySessionStorage;
 import com.hindbiswas.server.session.storage.FileSessionStorage;
@@ -148,10 +149,10 @@ public class SessionManager {
         try {
             int cleaned = storage.cleanup();
             if (cleaned > 0) {
-                System.out.println("Cleaned up " + cleaned + " expired sessions");
+                Logger.wrn("Cleaned up " + cleaned + " expired sessions");
             }
         } catch (Exception e) {
-            System.err.println("Error during session cleanup: " + e.getMessage());
+            Logger.err("Error during session cleanup: " + e.getMessage());
         }
     }
     
