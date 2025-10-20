@@ -1,0 +1,23 @@
+<link rel="stylesheet" href="/css/style.css">
+
+<a href="/" class="logo">
+	JavaWebServer
+</a>
+
+ <input class="menu-icon" type="checkbox" id="menu-icon" name="menu-icon"/>
+ <label for="menu-icon"></label>
+ <nav class="nav"> 		
+	<ul class="pt-5">
+		<li><a href="/">Home</a></li>
+		{% if (!sessionExists('loggedIn') || !sessionGet('loggedIn')) %}
+			<li><a href="/login.jhp">Login</a></li>
+			<li><a href="/register.jhp">Register</a></li>
+		{% else %}
+			<li><a href="/dashboard.jhp">Dashboard</a></li>
+			<li><a href="/logout">Logout</a></li>
+		{% endif %}
+	</ul>
+ </nav>
+
+ <div class="section-center">
+

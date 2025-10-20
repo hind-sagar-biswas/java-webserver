@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - JSW Demo</title>
+</head>
+
+<body>
+    {% if (!sessionExists('loggedIn') || !sessionGet('loggedIn')) %}
+    <script>window.location.href = '/login.jhp';</script>
+    {% else %}
+
+    {% include 'header.jhp' %}
+
+    <div class="container">
+        <div class="dashboard">
+            <!-- Header -->
+            <div class="dashboard-header">
+                <div>
+                    <h1>📝 My Todos</h1>
+                    <p class="welcome-text">Welcome back, <strong>{{ sessionGet('username') }}</strong>!</p>
+                </div>
+                <form method="POST" action="/logout" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary">Logout</button>
+                </form>
+            </div>
+
+            {% if sessionExists('success') %}
+            <div class="message success">{{ sessionGet('success') }}</div>
+            {{ sessionRemove('success') }}
+            {% endif %}
+
+            <!-- Add Todo Form -->
+            <div class="add-todo-section">
+                <form id="addTodoForm">
+                    <input type="text" id="todoInput" name="title" placeholder="What needs to be done?" required
+                        autofocus>
+                    <button type="submit" class="btn btn-primary">Add</button>
+                </form>
+                <p class="todo-hint">💡 Tip: Click the checkbox to mark as complete, × to delete</p>
+            </div>
+
+            <!-- Message -->
+            <div id="message" class="message hidden"></div>
+
+            <!-- Filters -->
+            <div class="filter-tabs">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="active">Active</button>
+                <button class="filter-btn" data-filter="completed">Completed</button>
+            </div>
+
+            <!-- Todo List -->
+            <div id="todoList" class="todo-list">
+                <div class="loading">Loading todos...</div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats">
+                <span id="stats">0 items</span>
+            </div>
+        </div>
+    </div>
+
+    {% include 'footer.jhp' %}
+
+    <script src="/js/todo.js"></script>
+    {% endif %}
+</body>
+
+</html>

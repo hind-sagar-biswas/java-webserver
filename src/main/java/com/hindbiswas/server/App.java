@@ -8,7 +8,6 @@ import com.hindbiswas.server.session.SessionConfig;
 import com.hindbiswas.server.session.StorageType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,7 +38,7 @@ public class App {
                 .setDefaultMaxInactiveInterval(3600) // 1 hour
                 .setCleanupIntervalSeconds(300); // 5 minutes
 
-        WebServer server = new WebServer(8000, "/home/shinigami/www", sessionConfig);
+        WebServer server = new WebServer(8000, "./example", sessionConfig);
         HybridRouter router = new HybridRouter();
 
         // ==================== Authentication Routes ====================
@@ -182,7 +181,7 @@ public class App {
 
             Todo todo = new Todo(todoIdCounter.getAndIncrement(), title.trim(), false);
 
-            userTodos.computeIfAbsent(username, k -> new ArrayList<>()).add(todo);
+            userTodos.computeIfAbsent(username, _ -> new ArrayList<>()).add(todo);
 
             return Response.json(todoToJson(todo));
         });

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - JSW Demo</title>
+</head>
+
+<body>
+    {% if (sessionExists('loggedIn') && sessionGet('loggedIn')) %}
+    <script>window.location.href = '/dashboard.jhp';</script>
+    {% endif %}
+
+    {% include 'header.jhp' %}
+    <div class="container">
+        <h1>Login</h1>
+
+        <div class="auth-card">
+            {% if sessionExists('error') %}
+            <div class="message error">{{ sessionGet('error') }}</div>
+            {{ sessionRemove('error') }}
+            {% endif %}
+
+            {% if sessionExists('success') %}
+            <div class="message success">{{ sessionGet('success') }}</div>
+            {{ sessionRemove('success') }}
+            {% endif %}
+
+            <form method="POST" action="/login">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+
+            <p class="auth-link">
+                Don't have an account? <a href="/register.jhp">Register here</a>
+            </p>
+
+            <div class="demo-info">
+                <strong>Demo Account:</strong><br>
+                Username: <code>demo</code><br>
+                Password: <code>demo123</code>
+            </div>
+        </div>
+    </div>
+    {% include 'footer.jhp' %}
+</body>
+
+</html>

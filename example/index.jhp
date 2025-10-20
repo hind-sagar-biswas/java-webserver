@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Web Server with JHP</title>
+</head>
+
+<body>
+    {% include 'header.jhp' %}
+
+    <h1>Welcome to JHP Integration!</h1>
+    <p>Server Method: {{ __server.method }}</p>
+    <p>Request Path: {{ __server.path }}</p>
+    <p>HTTP Version: {{ __server.version }}</p>
+
+    <h2>String Utilities Demo</h2>
+    <p>Uppercase: {{ upper("hello world") }}</p>
+    <p>Capitalize: {{ capitalize("hello world") }}</p>
+    <p>Reverse: {{ reverse("JHP") }}</p>
+
+    <h2>Math Utilities Demo</h2>
+    <p>Random Number: {{ random(10) }}</p>
+    <p>Max of 5, 10: {{ max(5, 10) }}</p>
+    <p>Square Root of 16: {{ sqrt(16) }}</p>
+
+    <h2>Date Utilities Demo</h2>
+    <p>Current Year: {{ currentYear() }}</p>
+    <p>Current Date/Time: {{ currentDateTime() }}</p>
+
+    {% include 'footer.jhp' %}
+</body>
+
+</html>

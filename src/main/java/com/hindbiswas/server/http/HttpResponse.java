@@ -79,8 +79,6 @@ public class HttpResponse {
         this.mimeType = mimeType;
         this.headers = headers;
         this.cookies = cookies != null ? cookies : new ArrayList<>();
-
-        System.out.println("Response created: " + this);
     }
 
     /**
