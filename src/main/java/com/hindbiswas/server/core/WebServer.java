@@ -4,6 +4,7 @@ import com.hindbiswas.server.facade.JhpEngine;
 import com.hindbiswas.server.handler.ConnectionHandler;
 import com.hindbiswas.server.routing.Router;
 import com.hindbiswas.server.routing.StaticRouter;
+import com.hindbiswas.server.session.SessionConfig;
 import com.hindbiswas.server.session.SessionManager;
 
 import java.io.File;
@@ -70,8 +71,8 @@ public class WebServer {
      *
      * @param port the port number to listen on
      */
-    public WebServer(int port, SessionManager sessionManager) {
-        this(port, 10, ".", sessionManager);
+    public WebServer(int port, SessionConfig sessionConfig) {
+        this(port, 10, ".", sessionConfig);
     }
 
     /**
@@ -114,12 +115,15 @@ public class WebServer {
      * @param sessionManager the session manager to use
      * @throws IllegalArgumentException if the directory is invalid
      */
-    public WebServer(int port, int maxThreads, String webRoot, SessionManager sessionManager)
+    public WebServer(int port, int maxThreads, String webRoot, SessionConfig sessionConfig)
             throws IllegalArgumentException {
         this.port = port;
         this.webRoot = validateWebRoot(webRoot);
         this.pool = Executors.newFixedThreadPool(maxThreads);
-        this.sessionManager = sessionManager;
+        
+        if (sessionConfig == null)
+            sessionConfig = new SessionConfig();
+        this.sessionManager = new SessionManager(sessionConfig);
     }
 
     /**
@@ -131,7 +135,7 @@ public class WebServer {
      * @throws IllegalArgumentException if the directory is invalid
      */
     public WebServer(int port, int maxThreads, String webRoot) throws IllegalArgumentException {
-        this(port, maxThreads, webRoot, new SessionManager());
+        this(port, maxThreads, webRoot, null);
     }
 
     /**
@@ -177,7 +181,7 @@ public class WebServer {
 
     /**
      * Stops the web server gracefully.
-     * Closes the server socket and shuts down the thread pool.
+     * Closes the server socket, shuts down the thread pool, and stops the session manager.
      */
     public void stop() {
         running = false;
@@ -195,6 +199,11 @@ public class WebServer {
             }
         } catch (InterruptedException e) {
             pool.shutdownNow();
+        }
+        
+        // Shutdown session manager to stop cleanup scheduler and close storage
+        if (sessionManager != null) {
+            sessionManager.shutdown();
         }
     }
 

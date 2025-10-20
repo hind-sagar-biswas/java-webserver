@@ -56,5 +56,8 @@ public class Context extends com.hindbiswas.jhp.Context {
         if (req.getSession() != null) {
             super.add("__session", req.getSession());
         }
+        
+        // Add request object for SessionUtils and other utilities
+        super.add("__request__", req);
     }
 }

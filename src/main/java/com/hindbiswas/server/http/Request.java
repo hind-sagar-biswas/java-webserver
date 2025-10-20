@@ -383,7 +383,8 @@ public class Request {
     }
 
     /**
-     * Initializes the session from the JSESSIONID cookie if present.
+     * Initializes the session from the session cookie if present.
+     * Uses the cookie name configured in SessionManager (default: JSESSIONID).
      * This is called automatically during request construction.
      */
     private void initializeSession() {
@@ -391,8 +392,9 @@ public class Request {
             return;
         }
 
-        // Try to get session ID from cookie
-        Cookie sessionCookie = getCookie("JSESSIONID");
+        // Try to get session ID from cookie using configured cookie name
+        String cookieName = sessionManager.getCookieName();
+        Cookie sessionCookie = getCookie(cookieName);
         if (sessionCookie != null) {
             String sessionId = sessionCookie.getValue();
             sessionManager.getSession(sessionId).ifPresent(s -> this.session = s);
@@ -401,15 +403,16 @@ public class Request {
 
     /**
      * Gets the session cookie for this request's session.
+     * Uses the cookie configuration from SessionManager.
      * This should be added to the response to maintain session state.
      * 
      * @return Cookie object for the session, or null if no session exists
      */
     public Cookie getSessionCookie() {
-        if (session == null) {
+        if (session == null || sessionManager == null) {
             return null;
         }
-        return Cookie.sessionCookie("JSESSIONID", session.getId());
+        return sessionManager.createSessionCookie(session.getId());
     }
 
     /**
@@ -419,5 +422,35 @@ public class Request {
      */
     public boolean hasSession() {
         return session != null;
+    }
+
+
+    /**
+     * Invalidates the current session.
+     * 
+     * @return true if a session was invalidated, false if no session exists
+     */
+    public boolean invalidateSession() {
+        if (session == null || sessionManager == null) {
+            return false;
+        }
+        String sessionId = session.getId();
+        session.invalidate();
+        sessionManager.invalidate(sessionId);
+        session = null;
+        return true;
+    }
+    
+    /**
+     * Gets a cookie to delete the session cookie.
+     * This should be sent in the response after session invalidation.
+     * 
+     * @return Cookie configured to delete the session cookie, or null if no SessionManager
+     */
+    public Cookie getDeleteSessionCookie() {
+        if (sessionManager == null) {
+            return null;
+        }
+        return sessionManager.createDeleteCookie();
     }
 }

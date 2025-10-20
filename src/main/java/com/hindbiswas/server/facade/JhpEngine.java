@@ -9,6 +9,7 @@ import com.hindbiswas.server.http.Request;
 import com.hindbiswas.server.util.StringUtils;
 import com.hindbiswas.server.util.MathUtils;
 import com.hindbiswas.server.util.RandomUtils;
+import com.hindbiswas.server.util.SessionUtils;
 import com.hindbiswas.server.util.DateUtils;
 import com.hindbiswas.server.util.CollectionUtils;
 import com.hindbiswas.server.util.HtmlUtils;
@@ -126,6 +127,15 @@ public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
         functionLibrary.register("truncate", HtmlUtils.truncate);
         functionLibrary.register("urlEncode", HtmlUtils.urlEncode);
         functionLibrary.register("urlDecode", HtmlUtils.urlDecode);
+
+        // Session Utilities
+        functionLibrary.register("sessionGet", SessionUtils.sessionGet);
+        functionLibrary.register("sessionSet", SessionUtils.sessionSet);
+        functionLibrary.register("sessionRemove", SessionUtils.sessionRemove);
+        functionLibrary.register("sessionExists", SessionUtils.sessionExists);
+        functionLibrary.register("sessionInvalidate", SessionUtils.sessionInvalidate);
+        functionLibrary.register("sessionId", SessionUtils.sessionId);
+        functionLibrary.register("sessionActive", SessionUtils.sessionActive);
     }
 
     public void setDebugMode(boolean debug) {

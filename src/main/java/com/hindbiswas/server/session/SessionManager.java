@@ -1,5 +1,6 @@
 package com.hindbiswas.server.session;
 
+import com.hindbiswas.server.http.Cookie;
 import com.hindbiswas.server.session.storage.SessionStorage;
 import com.hindbiswas.server.session.storage.InMemorySessionStorage;
 import com.hindbiswas.server.session.storage.FileSessionStorage;
@@ -14,20 +15,25 @@ import java.nio.file.Path;
 public class SessionManager {
     private final SessionStorage storage;
     private final ScheduledExecutorService cleanupScheduler;
-    private final long cleanupIntervalSeconds;
-    private final int defaultMaxInactiveInterval;
+    private final SessionConfig config;
 
-    public SessionManager(StorageType storageType, Path storagePath, 
-            long cleanupIntervalSeconds, int defaultMaxInactiveInterval) {
-        if (cleanupIntervalSeconds <= 0) {
+    /**
+     * Constructs a SessionManager with a SessionConfig.
+     * 
+     * @param config The session configuration
+     */
+    public SessionManager(SessionConfig config) {
+        if (config == null) {
+            throw new IllegalArgumentException("SessionConfig cannot be null");
+        }
+        if (config.getCleanupIntervalSeconds() <= 0) {
             throw new IllegalArgumentException("Cleanup interval must be positive");
         }
 
-        this.cleanupIntervalSeconds = cleanupIntervalSeconds;
-        this.defaultMaxInactiveInterval = defaultMaxInactiveInterval > 0 ? defaultMaxInactiveInterval : 1800; // Default 30 minutes
+        this.config = config;
 
         // Initialize the appropriate storage
-        this.storage = createStorage(storageType, storagePath);
+        this.storage = createStorage(config.getStorageType(), config.getStoragePath());
         this.storage.initialize();
 
         // Setup background cleanup
@@ -40,12 +46,29 @@ public class SessionManager {
         startCleanupTask();
     }
     
+    /**
+     * Constructs a SessionManager with default configuration.
+     */
     public SessionManager() {
-        this(StorageType.MEMORY, null, 120, 1800);
+        this(new SessionConfig());
+    }
+    
+    /**
+     * Legacy constructor for backward compatibility.
+     * @deprecated Use SessionManager(SessionConfig) instead
+     */
+    @Deprecated
+    public SessionManager(StorageType storageType, Path storagePath, 
+            long cleanupIntervalSeconds, int defaultMaxInactiveInterval) {
+        this(new SessionConfig()
+            .setStorageType(storageType)
+            .setStoragePath(storagePath)
+            .setCleanupIntervalSeconds(cleanupIntervalSeconds)
+            .setDefaultMaxInactiveInterval(defaultMaxInactiveInterval));
     }
     
     public Session createSession() {
-        return createSession(defaultMaxInactiveInterval);
+        return createSession(config.getDefaultMaxInactiveInterval());
     }
 
     public synchronized Session createSession(int maxInactiveInterval) {
@@ -103,8 +126,8 @@ public class SessionManager {
     private void startCleanupTask() {
         cleanupScheduler.scheduleAtFixedRate(
             this::cleanupExpiredSessions,
-            cleanupIntervalSeconds,
-            cleanupIntervalSeconds,
+            config.getCleanupIntervalSeconds(),
+            config.getCleanupIntervalSeconds(),
             TimeUnit.SECONDS
         );
     }
@@ -118,5 +141,42 @@ public class SessionManager {
         } catch (Exception e) {
             System.err.println("Error during session cleanup: " + e.getMessage());
         }
+    }
+    
+    /**
+     * Gets the session configuration.
+     * 
+     * @return The SessionConfig instance
+     */
+    public SessionConfig getConfig() {
+        return config;
+    }
+    
+    /**
+     * Creates a session cookie using the configured settings.
+     * 
+     * @param sessionId The session ID
+     * @return Cookie configured according to SessionConfig
+     */
+    public Cookie createSessionCookie(String sessionId) {
+        return config.createSessionCookie(sessionId);
+    }
+    
+    /**
+     * Creates a cookie to delete the session cookie.
+     * 
+     * @return Cookie configured to delete the session
+     */
+    public Cookie createDeleteCookie() {
+        return config.createDeleteCookie();
+    }
+    
+    /**
+     * Gets the configured session cookie name.
+     * 
+     * @return The cookie name (e.g., "JSESSIONID")
+     */
+    public String getCookieName() {
+        return config.getCookieName();
     }
 }
