@@ -253,4 +253,13 @@ public class WebServer {
     public static JhpEngine getEngine() {
         return JhpEngine.getInstance();
     }
+
+    /**
+     * Gets the session manager used by this server.
+     *
+     * @return the SessionManager instance
+     */
+    public SessionManager getSessionManager() {
+        return sessionManager;
+    }
 }

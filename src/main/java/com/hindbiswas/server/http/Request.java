@@ -7,6 +7,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.hindbiswas.server.session.Session;
+import com.hindbiswas.server.session.SessionManager;
+
 /**
  * Represents an HTTP request parsed from a socket input stream.
  * Supports parsing request line, headers, query parameters, and body
@@ -34,6 +37,12 @@ public class Request {
 
     /** Parsed cookies from Cookie header */
     public final Map<String, Cookie> cookies;
+
+    /** Session associated with this request */
+    private Session session;
+
+    /** Session manager for session operations */
+    private SessionManager sessionManager;
 
     /** Content-Length if present */
     private int contentLength;
@@ -67,6 +76,18 @@ public class Request {
      * @throws IOException If request line is malformed or reading fails
      */
     public Request(BufferedReader reader) throws IOException {
+        this(reader, null);
+    }
+
+    /**
+     * Constructs a Request by parsing an incoming BufferedReader with session support.
+     * Supports GET, POST, query params, headers, basic body formats, and automatic session retrieval.
+     *
+     * @param reader BufferedReader from socket InputStream
+     * @param sessionManager SessionManager for automatic session retrieval (can be null)
+     * @throws IOException If request line is malformed or reading fails
+     */
+    public Request(BufferedReader reader, SessionManager sessionManager) throws IOException {
         String line = reader.readLine(); // Example: GET /path HTTP/1.1
         if (line == null || line.trim().isEmpty()) {
             throw new IOException("Empty or null request line");
@@ -96,6 +117,10 @@ public class Request {
         } else {
             this.body = new HashMap<>();
         }
+
+        // Store session manager and initialize session from cookie
+        this.sessionManager = sessionManager;
+        initializeSession();
     }
 
     /**
@@ -125,7 +150,7 @@ public class Request {
             if (parts.length == 2) {
                 String name = parts[0].trim().toLowerCase();
                 String value = parts[1].trim();
-                
+
                 // Handle duplicate headers
                 if (headers.containsKey(name)) {
                     String existing = headers.get(name);
@@ -159,10 +184,10 @@ public class Request {
         if (contentLength > 10 * 1024 * 1024) { // 10MB limit
             throw new IOException("Content-Length too large: " + contentLength);
         }
-        
+
         char[] buffer = new char[contentLength];
         int totalRead = 0;
-        
+
         // Read all bytes, handling partial reads
         while (totalRead < contentLength) {
             int read = reader.read(buffer, totalRead, contentLength - totalRead);
@@ -171,7 +196,7 @@ public class Request {
             }
             totalRead += read;
         }
-        
+
         if (totalRead == 0)
             return new HashMap<>();
         String body = new String(buffer, 0, totalRead);
@@ -268,11 +293,11 @@ public class Request {
     private Map<String, Cookie> parseCookies() {
         Map<String, Cookie> cookieMap = new HashMap<>();
         String cookieHeader = headers.get("cookie");
-        
+
         if (cookieHeader == null || cookieHeader.trim().isEmpty()) {
             return cookieMap;
         }
-        
+
         // Split by semicolon to get individual cookies
         String[] cookiePairs = cookieHeader.split(";");
         for (String pair : cookiePairs) {
@@ -280,7 +305,7 @@ public class Request {
             if (pair.isEmpty()) {
                 continue;
             }
-            
+
             int eq = pair.indexOf('=');
             if (eq > 0) {
                 String name = pair.substring(0, eq).trim();
@@ -288,7 +313,7 @@ public class Request {
                 cookieMap.put(name, new Cookie(name, value));
             }
         }
-        
+
         return cookieMap;
     }
 
@@ -309,5 +334,90 @@ public class Request {
      */
     public Map<String, Cookie> getCookies() {
         return new HashMap<>(cookies);
+    }
+
+    /**
+     * Gets the session associated with this request.
+     * 
+     * @return Session object or null if no session exists
+     */
+    public Session getSession() {
+        return session;
+    }
+
+    /**
+     * Gets the session associated with this request, creating one if it doesn't exist.
+     * Note: This method requires a SessionManager to create new sessions.
+     * Use getOrCreateSession(SessionManager) for automatic session creation.
+     * 
+     * @param create If true, would create a new session (but requires SessionManager)
+     * @return Session object or null if no session exists
+     * @deprecated Use getOrCreateSession(SessionManager) instead for session creation
+     */
+    @Deprecated
+    public Session getSession(boolean create) {
+        return session;
+    }
+
+    /**
+     * Gets the session associated with this request, creating one if it doesn't exist.
+     * Uses the SessionManager provided during request construction.
+     * 
+     * @return Session object (existing or newly created), or null if no SessionManager available
+     */
+    public Session getOrCreateSession() {
+        if (session == null && sessionManager != null) {
+            session = sessionManager.createSession();
+        }
+        return session;
+    }
+
+    /**
+     * Sets the session for this request.
+     * This is typically called by the ConnectionHandler after retrieving or creating a session.
+     * 
+     * @param session Session object to associate with this request
+     */
+    public void setSession(Session session) {
+        this.session = session;
+    }
+
+    /**
+     * Initializes the session from the JSESSIONID cookie if present.
+     * This is called automatically during request construction.
+     */
+    private void initializeSession() {
+        if (sessionManager == null) {
+            return;
+        }
+
+        // Try to get session ID from cookie
+        Cookie sessionCookie = getCookie("JSESSIONID");
+        if (sessionCookie != null) {
+            String sessionId = sessionCookie.getValue();
+            sessionManager.getSession(sessionId).ifPresent(s -> this.session = s);
+        }
+    }
+
+    /**
+     * Gets the session cookie for this request's session.
+     * This should be added to the response to maintain session state.
+     * 
+     * @return Cookie object for the session, or null if no session exists
+     */
+    public Cookie getSessionCookie() {
+        if (session == null) {
+            return null;
+        }
+        return Cookie.sessionCookie("JSESSIONID", session.getId());
+    }
+
+    /**
+     * Checks if this request has an active session.
+     * 
+     * @return true if a session exists, false otherwise
+     */
+    public boolean hasSession() {
+        return session != null;
     }
 }

@@ -1,5 +1,6 @@
 package com.hindbiswas.server.handler;
 
+import com.hindbiswas.server.http.Cookie;
 import com.hindbiswas.server.http.HttpResponse;
 import com.hindbiswas.server.http.HttpUtils;
 import com.hindbiswas.server.http.Request;
@@ -83,8 +84,16 @@ public class ConnectionHandler implements Runnable {
                 Request request = null;
 
                 try {
-                    request = new Request(reader);
+                    // Request now handles session retrieval automatically
+                    request = new Request(reader, sessionManager);
+                    
                     response = router.resolve(request, webRoot);
+
+                    // Set session cookie if session exists
+                    Cookie sessionCookie = request.getSessionCookie();
+                    if (sessionCookie != null) {
+                        response.addCookie(sessionCookie);
+                    }
 
                     System.out.println("[INCOMING]: " + request);
                     System.out.println("[OUTGOING]: " + response);

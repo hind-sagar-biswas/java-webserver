@@ -51,5 +51,10 @@ public class Context extends com.hindbiswas.jhp.Context {
             req.cookies.forEach((name, cookie) -> cookieValues.put(name, cookie.getValue()));
         }
         super.add("__cookie", cookieValues);
+        
+        // Add session to context if it exists
+        if (req.getSession() != null) {
+            super.add("__session", req.getSession());
+        }
     }
 }
