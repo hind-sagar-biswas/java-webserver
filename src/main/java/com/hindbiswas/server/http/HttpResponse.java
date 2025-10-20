@@ -208,6 +208,17 @@ public class HttpResponse {
     }
 
     /**
+     * Adds a cookie to this response.
+     * 
+     * @param cookie Cookie to add
+     */
+    public void addCookie(Cookie cookie) {
+        if (cookie != null) {
+            cookies.add(cookie);
+        }
+    }
+
+    /**
      * Builds the HTTP response string (headers only, not including body bytes).
      * Automatically sets Content-Type and Content-Length if not set.
      * Adds Set-Cookie headers for each cookie.
