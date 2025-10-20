@@ -45,6 +45,12 @@ public class Context extends com.hindbiswas.jhp.Context {
         super.add("__header", (req.headers == null) ? new HashMap<>() : new HashMap<>(req.headers));
         super.add("__get", (req.params == null) ? new HashMap<>() : new HashMap<>(req.params));
         super.add("__post", (req.body == null ? new HashMap<>() : new HashMap<>(req.body)));
+        
+        Map<String, String> cookieValues = new HashMap<>();
+        if (req.cookies != null) {
+            req.cookies.forEach((name, cookie) -> cookieValues.put(name, cookie.getValue()));
+        }
+        super.add("__cookie", cookieValues);
     }
 
 }

@@ -32,6 +32,9 @@ public class Request {
     /** HTTP headers map (lowercased keys) */
     public final Map<String, String> headers;
 
+    /** Parsed cookies from Cookie header */
+    public final Map<String, Cookie> cookies;
+
     /** Content-Length if present */
     private int contentLength;
 
@@ -53,6 +56,7 @@ public class Request {
         this.headers = headers;
         this.params = pathParts.length > 1 ? parseParams(pathParts[1]) : new HashMap<>();
         this.body = body != null ? body : new HashMap<>();
+        this.cookies = parseCookies();
     }
 
     /**
@@ -80,6 +84,7 @@ public class Request {
 
         this.headers = parseHeaders(reader);
         this.params = pathParts.length > 1 ? parseParams(pathParts[1]) : new HashMap<>();
+        this.cookies = parseCookies();
 
         if (headers.containsKey("content-length")) {
             try {
@@ -105,6 +110,8 @@ public class Request {
 
     /**
      * Parses headers from input stream.
+     * Handles duplicate headers by concatenating values with semicolons for Cookie header,
+     * and commas for other headers (per HTTP spec).
      * 
      * @param reader BufferedReader after request line
      * @return Map of lowercase header names to values
@@ -118,7 +125,19 @@ public class Request {
             if (parts.length == 2) {
                 String name = parts[0].trim().toLowerCase();
                 String value = parts[1].trim();
-                headers.put(name, value);
+                
+                // Handle duplicate headers
+                if (headers.containsKey(name)) {
+                    String existing = headers.get(name);
+                    // Cookie headers are semicolon-separated, others are comma-separated
+                    if ("cookie".equals(name)) {
+                        headers.put(name, existing + "; " + value);
+                    } else {
+                        headers.put(name, existing + ", " + value);
+                    }
+                } else {
+                    headers.put(name, value);
+                }
             }
         }
         return headers;
@@ -238,5 +257,57 @@ public class Request {
      */
     public boolean isHttp10() {
         return "HTTP/1.0".equalsIgnoreCase(version);
+    }
+
+    /**
+     * Parses cookies from the Cookie header.
+     * Cookie header format: name1=value1; name2=value2
+     * 
+     * @return Map of cookie name to Cookie object
+     */
+    private Map<String, Cookie> parseCookies() {
+        Map<String, Cookie> cookieMap = new HashMap<>();
+        String cookieHeader = headers.get("cookie");
+        
+        if (cookieHeader == null || cookieHeader.trim().isEmpty()) {
+            return cookieMap;
+        }
+        
+        // Split by semicolon to get individual cookies
+        String[] cookiePairs = cookieHeader.split(";");
+        for (String pair : cookiePairs) {
+            pair = pair.trim();
+            if (pair.isEmpty()) {
+                continue;
+            }
+            
+            int eq = pair.indexOf('=');
+            if (eq > 0) {
+                String name = pair.substring(0, eq).trim();
+                String value = pair.substring(eq + 1).trim();
+                cookieMap.put(name, new Cookie(name, value));
+            }
+        }
+        
+        return cookieMap;
+    }
+
+    /**
+     * Gets a cookie by name.
+     * 
+     * @param name Cookie name
+     * @return Cookie object or null if not found
+     */
+    public Cookie getCookie(String name) {
+        return cookies.get(name);
+    }
+
+    /**
+     * Gets all cookies from the request.
+     * 
+     * @return Map of cookie name to Cookie object
+     */
+    public Map<String, Cookie> getCookies() {
+        return new HashMap<>(cookies);
     }
 }

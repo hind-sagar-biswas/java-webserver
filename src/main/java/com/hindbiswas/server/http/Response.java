@@ -7,8 +7,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -21,11 +23,12 @@ public class Response {
     private final byte[] body;
     private final String mimeType;
     private final Map<String, String> headers;
+    private final List<Cookie> cookies;
 
     /**
      * Master constructor: initializes all fields and builds headers.
      */
-    private Response(int statusCode, String mimeType, byte[] body, Map<String, String> extraHeaders) {
+    private Response(int statusCode, String mimeType, byte[] body, Map<String, String> extraHeaders, List<Cookie> cookies) {
         if (!HttpUtils.isStatusCodeSupported(statusCode)) {
             throw new IllegalArgumentException("Unsupported status code: " + statusCode);
         }
@@ -47,6 +50,22 @@ public class Response {
             extraHeaders.forEach((k, v) -> hdrs.put(k.trim(), v.trim()));
         }
         this.headers = Collections.unmodifiableMap(hdrs);
+        this.cookies = cookies != null ? new ArrayList<>(cookies) : new ArrayList<>();
+    }
+
+    /**
+     * Constructor overload for backward compatibility (no cookies).
+     */
+    private Response(int statusCode, String mimeType, byte[] body, Map<String, String> extraHeaders) {
+        this(statusCode, mimeType, body, extraHeaders, null);
+    }
+
+    private Response(int statusCode, String mimeType, byte[] body, List<Cookie> cookies) {
+        this(statusCode, mimeType, body, null, cookies);
+    }
+
+    private Response(int statusCode, String mimeType, byte[] body) {
+        this(statusCode, mimeType, body, null, null);
     }
 
     /** Static factory: serve a file or directory (with index.html). */
@@ -54,22 +73,22 @@ public class Response {
         File resource = HttpUtils.indexIfDirectory(file.getCanonicalFile());
         byte[] data = Files.readAllBytes(resource.toPath());
         String mime = HttpUtils.guessMime(resource.getName());
-        return new Response(200, mime, data, null);
+        return new Response(200, mime, data);
     }
 
     /** Static factory: plain text response. */
     public static Response text(String text) {
-        return new Response(200, "text/plain", text.getBytes(StandardCharsets.UTF_8), null);
+        return new Response(200, "text/plain", text.getBytes(StandardCharsets.UTF_8));
     }
 
     /** Static factory: JSON response with 200 OK. */
     public static Response json(String json) {
-        return new Response(200, "application/json", json.getBytes(StandardCharsets.UTF_8), null);
+        return new Response(200, "application/json", json.getBytes(StandardCharsets.UTF_8));
     }
 
     /** Static factory: JSON response with custom status code. */
     public static Response json(String json, int code) {
-        return new Response(code, "application/json", json.getBytes(StandardCharsets.UTF_8), null);
+        return new Response(code, "application/json", json.getBytes(StandardCharsets.UTF_8));
     }
 
     /** Static factory: redirect (302 Found by default). */
@@ -90,23 +109,23 @@ public class Response {
     /** Static factory: error page with HTML body. */
     public static Response error(int statusCode) {
         if (statusCode == 204 || statusCode == 304) {
-            return new Response(statusCode, "text/plain", new byte[0], null);
+            return new Response(statusCode, "text/plain", new byte[0]);
         }
         String msg = HttpUtils.getStatusMessage(statusCode);
         String html = "<html><head><title>" + statusCode + " " + msg +
                 "</title></head><body><h1>" + statusCode + " " + msg +
                 "</h1></body></html>";
-        return new Response(statusCode, "text/html", html.getBytes(StandardCharsets.UTF_8), null);
+        return new Response(statusCode, "text/html", html.getBytes(StandardCharsets.UTF_8));
     }
 
     /** Static factory: error page with JSON body. */
     public static Response jsonError(int statusCode) {
         if (statusCode == 204 || statusCode == 304) {
-            return new Response(statusCode, "text/plain", new byte[0], null);
+            return new Response(statusCode, "text/plain", new byte[0]);
         }
         String msg = HttpUtils.getStatusMessage(statusCode);
         String json = "{\"error\": \"" + msg + "\", \"code\": " + statusCode + "}";
-        return new Response(statusCode, "application/json", json.getBytes(StandardCharsets.UTF_8), null);
+        return new Response(statusCode, "application/json", json.getBytes(StandardCharsets.UTF_8));
     }
 
     /** Static factory: render a JHP file with a Context. */
@@ -134,14 +153,14 @@ public class Response {
             // Render the JHP file
             String rendered = engine.render(relativePath, context);
             byte[] data = rendered.getBytes(StandardCharsets.UTF_8);
-            return new Response(200, "text/html", data, null);
+            return new Response(200, "text/html", data);
         } catch (Exception e) {
             // Return 500 error with the error message
             String errorMsg = (e.getMessage() != null && !e.getMessage().isEmpty()) 
                 ? e.getMessage() 
                 : "JHP rendering failed";
             byte[] errorBytes = errorMsg.getBytes(StandardCharsets.UTF_8);
-            return new Response(500, "text/html", errorBytes, null);
+            return new Response(500, "text/html", errorBytes);
         }
     }
 
@@ -152,6 +171,28 @@ public class Response {
 
     /** Convert to a low-level HttpResponse (for sending over socket). */
     public HttpResponse toHttpResponse() {
-        return new HttpResponse(statusCode, statusMessage, body, mimeType, headers);
+        return new HttpResponse(statusCode, statusMessage, body, mimeType, headers, cookies);
+    }
+
+    /**
+     * Creates a new Response with an additional cookie.
+     * This method returns a new Response instance with the cookie added.
+     * 
+     * @param cookie Cookie to add
+     * @return New Response instance with the cookie
+     */
+    public Response withCookie(Cookie cookie) {
+        List<Cookie> newCookies = new ArrayList<>(this.cookies);
+        newCookies.add(cookie);
+        return new Response(statusCode, mimeType, body, new HashMap<>(headers), newCookies);
+    }
+
+    /**
+     * Gets the list of cookies to be sent with this response.
+     * 
+     * @return Unmodifiable list of cookies
+     */
+    public List<Cookie> getCookies() {
+        return Collections.unmodifiableList(cookies);
     }
 }
