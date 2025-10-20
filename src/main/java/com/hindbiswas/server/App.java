@@ -2,6 +2,7 @@ package com.hindbiswas.server;
 
 import com.hindbiswas.server.core.WebServer;
 import com.hindbiswas.server.http.Response;
+import com.hindbiswas.server.logger.Logger;
 import com.hindbiswas.server.routing.HybridRouter;
 import com.hindbiswas.server.session.Session;
 import com.hindbiswas.server.session.SessionConfig;
@@ -247,8 +248,7 @@ public class App {
         });
 
         server.setRouter(router);
-        System.out.println("🚀 Server starting on http://localhost:8000");
-        System.out.println("📝 Demo credentials: username=demo, password=demo123");
+        Logger.log("Demo credentials: username=demo, password=demo123");
         server.start();
     }
 

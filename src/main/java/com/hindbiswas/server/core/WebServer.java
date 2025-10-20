@@ -2,6 +2,7 @@ package com.hindbiswas.server.core;
 
 import com.hindbiswas.server.facade.JhpEngine;
 import com.hindbiswas.server.handler.ConnectionHandler;
+import com.hindbiswas.server.logger.Logger;
 import com.hindbiswas.server.routing.Router;
 import com.hindbiswas.server.routing.StaticRouter;
 import com.hindbiswas.server.session.SessionConfig;
@@ -99,8 +100,8 @@ public class WebServer {
     /**
      * Constructs a WebServer with a custom port, web root and session config.
      *
-     * @param port    the port number to listen on
-     * @param webRoot the root directory to serve files from
+     * @param port          the port number to listen on
+     * @param webRoot       the root directory to serve files from
      * @param sessionConfig the session config to use
      * @throws IllegalArgumentException if the directory is invalid
      */
@@ -132,7 +133,7 @@ public class WebServer {
         this.port = port;
         this.webRoot = validateWebRoot(webRoot);
         this.pool = Executors.newFixedThreadPool(maxThreads);
-        
+
         if (sessionConfig == null)
             sessionConfig = new SessionConfig();
         this.sessionManager = new SessionManager(sessionConfig);
@@ -164,8 +165,7 @@ public class WebServer {
             try {
                 JhpEngine.initialize(this);
             } catch (IOException e) {
-                System.err.println("Failed to initialize JHP engine: " + e.getMessage());
-                e.printStackTrace();
+                Logger.err("Failed to initialize JHP engine: " + e.getMessage());
                 stop();
             }
         }
@@ -174,26 +174,27 @@ public class WebServer {
             serverSocket = new ServerSocket(port);
             serverSocket.setSoTimeout(3000); // 3-second timeout for accept()
 
-            System.out.println("Server started on port " + port);
+            Logger.log("Server started on port " + port);
 
             while (running) {
                 try {
                     Socket socket = serverSocket.accept();
                     pool.submit(new ConnectionHandler(socket, webRoot, router, sessionManager));
                 } catch (RejectedExecutionException e) {
-                    System.err.println("Task rejected: " + e.getMessage());
+                    Logger.err("Task rejected: " + e.getMessage());
                 } catch (SocketTimeoutException ignored) {
                     // Continue checking the running flag
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.err("Exception in server: " + e.getMessage());
         }
     }
 
     /**
      * Stops the web server gracefully.
-     * Closes the server socket, shuts down the thread pool, and stops the session manager.
+     * Closes the server socket, shuts down the thread pool, and stops the session
+     * manager.
      */
     public void stop() {
         running = false;
@@ -201,7 +202,7 @@ public class WebServer {
             if (serverSocket != null)
                 serverSocket.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            Logger.err("Exception in server: " + e.getMessage());
         }
 
         pool.shutdown();
@@ -210,9 +211,10 @@ public class WebServer {
                 pool.shutdownNow();
             }
         } catch (InterruptedException e) {
+            Logger.err("Exception in server: " + e.getMessage());
             pool.shutdownNow();
         }
-        
+
         // Shutdown session manager to stop cleanup scheduler and close storage
         if (sessionManager != null) {
             sessionManager.shutdown();
