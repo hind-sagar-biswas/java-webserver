@@ -7,9 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.hindbiswas.server.session.Session;
-import com.hindbiswas.server.session.SessionManager;
-
 /**
  * Represents an HTTP request parsed from a socket input stream.
  * Supports parsing request line, headers, query parameters, and body
@@ -35,17 +32,8 @@ public class Request {
     /** HTTP headers map (lowercased keys) */
     public final Map<String, String> headers;
 
-    /** Parsed cookies from Cookie header */
-    public final Map<String, Cookie> cookies;
-
     /** Content-Length if present */
     private int contentLength;
-
-    /** Associated session (lazily loaded) */
-    private Session session;
-
-    /** Session manager for session operations */
-    private SessionManager sessionManager;
 
     /**
      * Constructs a request manually (usually for testing).
@@ -65,7 +53,6 @@ public class Request {
         this.headers = headers;
         this.params = pathParts.length > 1 ? parseParams(pathParts[1]) : new HashMap<>();
         this.body = body != null ? body : new HashMap<>();
-        this.cookies = parseCookies(headers);
     }
 
     /**
@@ -93,7 +80,6 @@ public class Request {
 
         this.headers = parseHeaders(reader);
         this.params = pathParts.length > 1 ? parseParams(pathParts[1]) : new HashMap<>();
-        this.cookies = parseCookies(headers);
 
         if (headers.containsKey("content-length")) {
             try {
@@ -252,123 +238,5 @@ public class Request {
      */
     public boolean isHttp10() {
         return "HTTP/1.0".equalsIgnoreCase(version);
-    }
-
-    /**
-     * Parses cookies from the Cookie header.
-     * 
-     * @param headers The request headers
-     * @return Map of cookie name to Cookie object
-     */
-    private Map<String, Cookie> parseCookies(Map<String, String> headers) {
-        Map<String, Cookie> cookieMap = new HashMap<>();
-        String cookieHeader = headers.get("cookie");
-        
-        if (cookieHeader == null || cookieHeader.trim().isEmpty()) {
-            return cookieMap;
-        }
-        
-        // Cookie header format: name1=value1; name2=value2
-        String[] cookiePairs = cookieHeader.split(";");
-        for (String pair : cookiePairs) {
-            pair = pair.trim();
-            if (pair.isEmpty()) continue;
-            
-            int eq = pair.indexOf('=');
-            if (eq > 0) {
-                String name = pair.substring(0, eq).trim();
-                String value = pair.substring(eq + 1).trim();
-                Cookie cookie = new Cookie(name, value);
-                cookieMap.put(name, cookie);
-            }
-        }
-        
-        return cookieMap;
-    }
-
-    /**
-     * Gets a cookie by name.
-     * 
-     * @param name Cookie name
-     * @return Cookie object or null if not found
-     */
-    public Cookie getCookie(String name) {
-        return cookies.get(name);
-    }
-
-    /**
-     * Gets all cookies.
-     * 
-     * @return Map of cookie name to Cookie object
-     */
-    public Map<String, Cookie> getCookies() {
-        return new HashMap<>(cookies);
-    }
-
-    /**
-     * Sets the session manager for this request.
-     * Internal use only - called by ConnectionHandler.
-     * 
-     * @param sessionManager The session manager
-     */
-    public void setSessionManager(SessionManager sessionManager) {
-        this.sessionManager = sessionManager;
-    }
-
-    /**
-     * Gets the session associated with this request.
-     * Creates a new session if one doesn't exist.
-     * 
-     * @return The session object
-     */
-    public Session getSession() {
-        return getSession(true);
-    }
-
-    /**
-     * Gets the session associated with this request.
-     * 
-     * @param create If true, creates a new session if one doesn't exist
-     * @return The session object, or null if create is false and no session exists
-     */
-    public Session getSession(boolean create) {
-        if (session != null) {
-            return session;
-        }
-        
-        if (sessionManager == null) {
-            if (create) {
-                throw new IllegalStateException("SessionManager not initialized");
-            }
-            return null;
-        }
-        
-        // Try to get session ID from cookie
-        String sessionCookieName = sessionManager.getConfig().getCookieName();
-        Cookie sessionCookie = cookies.get(sessionCookieName);
-        
-        if (sessionCookie != null) {
-            String sessionId = sessionCookie.getValue();
-            session = sessionManager.getSession(sessionId).orElse(null);
-        }
-        
-        // Create new session if requested and none exists
-        if (session == null && create) {
-            session = sessionManager.createSession();
-        }
-        
-        return session;
-    }
-
-    /**
-     * Invalidates the current session.
-     */
-    public void invalidateSession() {
-        if (session != null) {
-            if (sessionManager != null) {
-                sessionManager.invalidate(session.getId());
-            }
-            session = null;
-        }
     }
 }

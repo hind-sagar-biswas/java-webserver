@@ -4,8 +4,6 @@ import com.hindbiswas.server.facade.JhpEngine;
 import com.hindbiswas.server.handler.ConnectionHandler;
 import com.hindbiswas.server.routing.Router;
 import com.hindbiswas.server.routing.StaticRouter;
-import com.hindbiswas.server.session.SessionConfig;
-import com.hindbiswas.server.session.SessionManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,12 +43,6 @@ public class WebServer {
 
     /** The server socket for listening to client connections */
     private ServerSocket serverSocket;
-
-    /** Session manager for handling sessions */
-    private SessionManager sessionManager;
-
-    /** Session configuration */
-    private SessionConfig sessionConfig = new SessionConfig();
 
     /**
      * Constructs a WebServer using default settings.
@@ -133,11 +125,6 @@ public class WebServer {
         if (router == null)
             router = new StaticRouter();
 
-        // Initialize session manager
-        if (sessionManager == null) {
-            sessionManager = new SessionManager(sessionConfig);
-        }
-
         // Initialize JHP engine singleton if not already initialized
         if (!JhpEngine.isInitialized()) {
             try {
@@ -158,7 +145,7 @@ public class WebServer {
             while (running) {
                 try {
                     Socket socket = serverSocket.accept();
-                    pool.submit(new ConnectionHandler(socket, webRoot, router, sessionManager));
+                    pool.submit(new ConnectionHandler(socket, webRoot, router));
                 } catch (RejectedExecutionException e) {
                     System.err.println("Task rejected: " + e.getMessage());
                 } catch (SocketTimeoutException ignored) {
@@ -181,11 +168,6 @@ public class WebServer {
                 serverSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
-        }
-
-        // Shutdown session manager
-        if (sessionManager != null) {
-            sessionManager.shutdown();
         }
 
         pool.shutdown();
@@ -252,33 +234,5 @@ public class WebServer {
      */
     public static JhpEngine getEngine() {
         return JhpEngine.getInstance();
-    }
-
-    /**
-     * Configures session management for this server.
-     * Must be called before start().
-     *
-     * @param config Session configuration
-     * @return this WebServer instance for chaining
-     * @throws IllegalStateException if the server has already started
-     */
-    public WebServer configureSession(SessionConfig config) throws IllegalStateException {
-        if (running)
-            throw new IllegalStateException("Cannot configure session after server has started.");
-        this.sessionConfig = config != null ? config : new SessionConfig();
-        return this;
-    }
-
-    /**
-     * Gets the session manager for this server.
-     * Initializes it if not already initialized.
-     *
-     * @return the SessionManager instance
-     */
-    public SessionManager getSessionManager() {
-        if (sessionManager == null) {
-            sessionManager = new SessionManager(sessionConfig);
-        }
-        return sessionManager;
     }
 }

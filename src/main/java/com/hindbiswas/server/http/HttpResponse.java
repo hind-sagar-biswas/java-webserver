@@ -6,9 +6,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.hindbiswas.server.facade.JhpEngine;
@@ -24,7 +22,6 @@ public class HttpResponse {
     private byte[] body;
     private String mimeType = "text/html";
     private Map<String, String> headers = new HashMap<>();
-    private List<Cookie> cookies = new ArrayList<>();
 
     /**
      * Creates a custom HTTP response with status, body, and MIME type.
@@ -58,27 +55,6 @@ public class HttpResponse {
         this.body = body;
         this.mimeType = mimeType;
         this.headers = headers;
-    }
-
-    /**
-     * Creates a custom HTTP response with status, body, MIME type, custom
-     * headers, and cookies.
-     *
-     * @param statusCode    HTTP status code.
-     * @param statusMessage Status message.
-     * @param body          Response body.
-     * @param mimeType      MIME type of the response.
-     * @param headers       Additional HTTP headers.
-     * @param cookies       Cookies to set.
-     */
-    public HttpResponse(int statusCode, String statusMessage, byte[] body, String mimeType,
-            Map<String, String> headers, List<Cookie> cookies) {
-        this.statusCode = statusCode;
-        this.statusMessage = statusMessage;
-        this.body = body;
-        this.mimeType = mimeType;
-        this.headers = headers;
-        this.cookies = cookies != null ? cookies : new ArrayList<>();
     }
 
     /**
@@ -223,14 +199,6 @@ public class HttpResponse {
         for (Map.Entry<String, String> header : headers.entrySet()) {
             sb.append(header.getKey()).append(": ").append(header.getValue()).append("\r\n");
         }
-        
-        // Add Set-Cookie headers
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                sb.append("Set-Cookie: ").append(cookie.toString()).append("\r\n");
-            }
-        }
-        
         return sb.toString();
     }
 }
