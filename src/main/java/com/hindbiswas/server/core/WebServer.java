@@ -4,6 +4,7 @@ import com.hindbiswas.server.facade.JhpEngine;
 import com.hindbiswas.server.handler.ConnectionHandler;
 import com.hindbiswas.server.routing.Router;
 import com.hindbiswas.server.routing.StaticRouter;
+import com.hindbiswas.server.session.SessionManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,14 +45,15 @@ public class WebServer {
     /** The server socket for listening to client connections */
     private ServerSocket serverSocket;
 
+    /** The session manager for handling sessions */
+    private final SessionManager sessionManager;
+
     /**
      * Constructs a WebServer using default settings.
      * Port: 8080, Web root: current directory, Max threads: 10.
      */
     public WebServer() {
-        this.port = 8080;
-        this.webRoot = new File(".");
-        this.pool = Executors.newFixedThreadPool(10);
+        this(8000);
     }
 
     /**
@@ -60,9 +62,16 @@ public class WebServer {
      * @param port the port number to listen on
      */
     public WebServer(int port) {
-        this.port = port;
-        this.webRoot = new File(".");
-        this.pool = Executors.newFixedThreadPool(10);
+        this(port, 10);
+    }
+
+    /**
+     * Constructs a WebServer with a custom port.
+     *
+     * @param port the port number to listen on
+     */
+    public WebServer(int port, SessionManager sessionManager) {
+        this(port, 10, ".", sessionManager);
     }
 
     /**
@@ -72,9 +81,7 @@ public class WebServer {
      * @throws IllegalArgumentException if the directory is invalid
      */
     public WebServer(String webRoot) throws IllegalArgumentException {
-        this.port = 8080;
-        this.webRoot = validateWebRoot(webRoot);
-        this.pool = Executors.newFixedThreadPool(10);
+        this(8000, 10, webRoot);
     }
 
     /**
@@ -85,9 +92,7 @@ public class WebServer {
      * @throws IllegalArgumentException if the directory is invalid
      */
     public WebServer(int port, String webRoot) throws IllegalArgumentException {
-        this.port = port;
-        this.webRoot = validateWebRoot(webRoot);
-        this.pool = Executors.newFixedThreadPool(10);
+        this(port, 10, webRoot);
     }
 
     /**
@@ -97,13 +102,28 @@ public class WebServer {
      * @param maxThreads the maximum number of threads for the pool
      */
     public WebServer(int port, int maxThreads) {
-        this.port = port;
-        this.webRoot = new File(".");
-        this.pool = Executors.newFixedThreadPool(maxThreads);
+        this(port, maxThreads, ".");
     }
 
     /**
-     * Constructs a WebServer with full configuration.
+     * Constructs a WebServer wit full configuration.
+     *
+     * @param port           the port number to listen on
+     * @param maxThreads     the maximum number of threads for the pool
+     * @param webRoot        the root directory to serve files from
+     * @param sessionManager the session manager to use
+     * @throws IllegalArgumentException if the directory is invalid
+     */
+    public WebServer(int port, int maxThreads, String webRoot, SessionManager sessionManager)
+            throws IllegalArgumentException {
+        this.port = port;
+        this.webRoot = validateWebRoot(webRoot);
+        this.pool = Executors.newFixedThreadPool(maxThreads);
+        this.sessionManager = sessionManager;
+    }
+
+    /**
+     * Constructs a WebServer without session manager.
      *
      * @param port       the port number to listen on
      * @param maxThreads the maximum number of threads for the pool
@@ -111,9 +131,7 @@ public class WebServer {
      * @throws IllegalArgumentException if the directory is invalid
      */
     public WebServer(int port, int maxThreads, String webRoot) throws IllegalArgumentException {
-        this.port = port;
-        this.webRoot = validateWebRoot(webRoot);
-        this.pool = Executors.newFixedThreadPool(maxThreads);
+        this(port, maxThreads, webRoot, new SessionManager());
     }
 
     /**
@@ -145,7 +163,7 @@ public class WebServer {
             while (running) {
                 try {
                     Socket socket = serverSocket.accept();
-                    pool.submit(new ConnectionHandler(socket, webRoot, router));
+                    pool.submit(new ConnectionHandler(socket, webRoot, router, sessionManager));
                 } catch (RejectedExecutionException e) {
                     System.err.println("Task rejected: " + e.getMessage());
                 } catch (SocketTimeoutException ignored) {

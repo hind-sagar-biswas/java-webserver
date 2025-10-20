@@ -6,6 +6,7 @@ import com.hindbiswas.server.http.Request;
 import com.hindbiswas.server.http.Response;
 import com.hindbiswas.server.routing.Router;
 import com.hindbiswas.server.routing.StaticRouter;
+import com.hindbiswas.server.session.SessionManager;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -34,16 +35,17 @@ public class ConnectionHandler implements Runnable {
     /** The router used to handle the request and determine the response. */
     private final Router router;
 
+    /** The session manager for handling sessions */
+    private final SessionManager sessionManager;
+
     /**
      * Constructs a ConnectionHandler using a default static file router.
      *
      * @param client  The socket for the client connection.
      * @param webRoot The root directory for serving files.
      */
-    public ConnectionHandler(Socket client, File webRoot) {
-        this.client = client;
-        this.webRoot = webRoot;
-        this.router = new StaticRouter();
+    public ConnectionHandler(Socket client, File webRoot, SessionManager sessionManager) {
+        this(client, webRoot, null, sessionManager);
     }
 
     /**
@@ -54,12 +56,13 @@ public class ConnectionHandler implements Runnable {
      * @param webRoot The root directory for serving files.
      * @param router  The router used to handle requests.
      */
-    public ConnectionHandler(Socket client, File webRoot, Router router) {
+    public ConnectionHandler(Socket client, File webRoot, Router router, SessionManager sessionManager) {
         if (router == null)
             router = new StaticRouter();
         this.client = client;
         this.webRoot = webRoot;
         this.router = router;
+        this.sessionManager = sessionManager;
     }
 
     /**
