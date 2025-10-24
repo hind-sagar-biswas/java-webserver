@@ -1,5 +1,7 @@
 package com.hindbiswas.server.facade;
 
+import com.hindbiswas.server.logger.Logger;
+
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -106,6 +108,7 @@ public class FunctionLibrary extends com.hindbiswas.jhp.engine.FunctionLibrary {
                 } catch (InvocationFailureException e) {
                     diagnostic.add(e.getMessage());
                 } catch (RuntimeException e) {
+                    Logger.err("Error invoking function '" + name + "': " + e.getMessage());
                     throw new RuntimeException("Error invoking registered function '" + name + "': " + e.getMessage(),
                             e);
                 }
@@ -129,9 +132,11 @@ public class FunctionLibrary extends com.hindbiswas.jhp.engine.FunctionLibrary {
             Object result = info.samMethod.invoke(regFunc.function, callParams);
             return result;
         } catch (IllegalAccessException | IllegalArgumentException e) {
+            Logger.err("Reflection error invoking function: " + e.getMessage());
             throw new InvocationFailureException("Invocation failed due to reflection error: " + e.getMessage());
         } catch (InvocationTargetException ite) {
             Throwable cause = ite.getCause();
+            Logger.err("Function threw exception: " + (cause == null ? ite.getMessage() : cause.toString()));
             throw new RuntimeException(
                     "Function threw exception: " + (cause == null ? ite.getMessage() : cause.toString()), cause);
         }
@@ -319,6 +324,7 @@ public class FunctionLibrary extends com.hindbiswas.jhp.engine.FunctionLibrary {
                 Enum e = Enum.valueOf(enumType, name);
                 return e;
             } catch (IllegalArgumentException iae) {
+                Logger.dbg("Cannot convert '" + name + "' to enum " + targetType.getName());
                 throw new InvocationFailureException("Cannot convert '" + name + "' to enum " + targetType.getName());
             }
         }

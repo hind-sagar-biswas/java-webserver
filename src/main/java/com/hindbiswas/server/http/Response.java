@@ -2,6 +2,7 @@ package com.hindbiswas.server.http;
 
 import com.hindbiswas.server.facade.Context;
 import com.hindbiswas.server.facade.JhpEngine;
+import com.hindbiswas.server.logger.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -164,12 +165,11 @@ public class Response {
             byte[] data = rendered.getBytes(StandardCharsets.UTF_8);
             return new Response(200, "text/html", data);
         } catch (Exception e) {
-            // Return 500 error with the error message
+            Logger.err("JHP rendering failed for " + file.getName() + ": " + e.getMessage());
             String errorMsg = (e.getMessage() != null && !e.getMessage().isEmpty())
                     ? e.getMessage()
                     : "JHP rendering failed";
-            byte[] errorBytes = errorMsg.getBytes(StandardCharsets.UTF_8);
-            return new Response(500, "text/html", errorBytes);
+            return new Response(500, "text/html", errorMsg.getBytes(StandardCharsets.UTF_8));
         }
     }
 

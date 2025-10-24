@@ -6,6 +6,7 @@ import com.hindbiswas.jhp.engine.IssueHandleMode;
 import com.hindbiswas.jhp.engine.Settings;
 import com.hindbiswas.server.core.WebServer;
 import com.hindbiswas.server.http.Request;
+import com.hindbiswas.server.logger.Logger;
 import com.hindbiswas.server.util.StringUtils;
 import com.hindbiswas.server.util.MathUtils;
 import com.hindbiswas.server.util.RandomUtils;
@@ -164,6 +165,7 @@ public class JhpEngine extends com.hindbiswas.jhp.engine.JhpEngine {
             String result = super.render(pathTxt, context);
             return result;
         } catch (Exception e) {
+            Logger.err("JHP render error for " + pathTxt + ": " + e.getMessage());
             throw new RenderException(e.getMessage());
         }
     }

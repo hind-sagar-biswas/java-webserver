@@ -4,6 +4,7 @@ import com.hindbiswas.server.handler.RouteHandler;
 import com.hindbiswas.server.http.HttpResponse;
 import com.hindbiswas.server.http.Request;
 import com.hindbiswas.server.http.Response;
+import com.hindbiswas.server.logger.Logger;
 
 import java.io.File;
 import java.util.HashMap;
@@ -56,6 +57,7 @@ public abstract class AbstractMethodRouter implements Router {
                 try {
                     return handler.handle(request).toHttpResponse();
                 } catch (Exception e) {
+                    Logger.err("Handler exception for " + request.method + " " + request.path + ": " + e.getMessage());
                     return Response.error(500).toHttpResponse();
                 }
             }

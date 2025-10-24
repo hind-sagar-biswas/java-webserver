@@ -1,5 +1,6 @@
 package com.hindbiswas.server.session.storage;
 
+import com.hindbiswas.server.logger.Logger;
 import com.hindbiswas.server.session.Session;
 import java.io.*;
 import java.nio.file.*;
@@ -18,6 +19,7 @@ public class FileSessionStorage implements SessionStorage {
         try {
             Files.createDirectories(storageDir);
         } catch (IOException e) {
+            Logger.err("Failed to initialize session storage directory: " + e.getMessage());
             throw new RuntimeException("Failed to initialize session storage directory", e);
         }
     }
@@ -28,6 +30,7 @@ public class FileSessionStorage implements SessionStorage {
         try (ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(sessionFile.toFile()))) {
             stream.writeObject(session);
         } catch (IOException e) {
+            Logger.err("Failed to save session " + session.getId() + ": " + e.getMessage());
             throw new RuntimeException("Failed to save session: " + session.getId(), e);
         }
     }
@@ -42,6 +45,7 @@ public class FileSessionStorage implements SessionStorage {
         try (ObjectInputStream istream = new ObjectInputStream(new FileInputStream(sessionFile.toFile()))) {
             return Optional.of((Session) istream.readObject());
         } catch (IOException | ClassNotFoundException e) {
+            Logger.dbg("Failed to load session " + id + ": " + e.getMessage());
             return Optional.empty();
         }
     }
@@ -51,6 +55,7 @@ public class FileSessionStorage implements SessionStorage {
         try {
             Files.deleteIfExists(getSessionFile(id));
         } catch (IOException e) {
+            Logger.err("Failed to delete session " + id + ": " + e.getMessage());
             throw new RuntimeException("Failed to delete session: " + id, e);
         }
     }
@@ -68,14 +73,17 @@ public class FileSessionStorage implements SessionStorage {
                         count++;
                     }
                 } catch (IOException | ClassNotFoundException e) {
+                    Logger.dbg("Failed to read session file, deleting: " + e.getMessage());
                     try {
                         Files.deleteIfExists(path);
                         count++;
                     } catch (IOException ex) {
+                        Logger.err("Failed to delete corrupted session file: " + ex.getMessage());
                     }
                 }
             }
         } catch (IOException e) {
+            Logger.err("Failed to clean up sessions: " + e.getMessage());
             throw new RuntimeException("Failed to clean up sessions", e);
         }
         return count;

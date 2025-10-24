@@ -1,5 +1,8 @@
 package com.hindbiswas.server.http;
 
+import com.hindbiswas.server.facade.JhpEngine;
+import com.hindbiswas.server.logger.Logger;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -10,8 +13,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import com.hindbiswas.server.facade.JhpEngine;
 
 /**
  * Represents an HTTP response to be sent to the client.
@@ -100,12 +101,12 @@ public class HttpResponse {
         } catch (UnsupportedEncodingException e) {
             this.statusCode = 500;
             this.statusMessage = HttpUtils.getStatusMessage(this.statusCode);
-            e.printStackTrace();
+            Logger.err("Failed to decode URL path: " + e.getMessage());
             return;
         } catch (IOException e) {
             this.statusCode = 500;
             this.statusMessage = HttpUtils.getStatusMessage(this.statusCode);
-            e.printStackTrace();
+            Logger.err("IO error while processing request: " + e.getMessage());
             return;
         }
 
@@ -148,6 +149,7 @@ public class HttpResponse {
                             String errorMsg = (e.getMessage() != null && !e.getMessage().isEmpty())
                                     ? e.getMessage()
                                     : "JHP rendering failed";
+                            Logger.err("JHP rendering failed for " + request.path + ": " + e.getMessage());
                             this.body = errorMsg.getBytes(StandardCharsets.UTF_8);
                             this.mimeType = "text/html";
                         }
@@ -157,7 +159,7 @@ public class HttpResponse {
                 }
             } catch (IOException e) {
                 this.statusCode = 500;
-                e.printStackTrace();
+                Logger.err("Failed to read file: " + e.getMessage());
             }
         }
 

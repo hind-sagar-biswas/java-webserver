@@ -1,5 +1,7 @@
 package com.hindbiswas.server.http;
 
+import com.hindbiswas.server.logger.Logger;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -139,7 +141,7 @@ public class HttpUtils {
         try {
             return requested.getCanonicalPath().startsWith(webRoot.getCanonicalPath());
         } catch (IOException e) {
-            System.err.println("Failed to get canonical path for " + requested + ": " + e.getMessage());
+            Logger.err("Failed to get canonical path for " + requested + ": " + e.getMessage());
             return false;
         }
     }
@@ -196,7 +198,7 @@ public class HttpUtils {
 
             out.flush();
         } catch (IOException e) {
-            System.err.println("Failed to send response: " + e.getMessage());
+            Logger.err("Failed to send response: " + e.getMessage());
         }
     }
 

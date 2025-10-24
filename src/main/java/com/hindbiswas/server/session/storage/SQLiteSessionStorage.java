@@ -1,5 +1,6 @@
 package com.hindbiswas.server.session.storage;
 
+import com.hindbiswas.server.logger.Logger;
 import com.hindbiswas.server.session.Session;
 import java.io.*;
 import java.nio.file.*;
@@ -63,6 +64,7 @@ public class SQLiteSessionStorage implements SessionStorage {
                 connection.commit();
             }
         } catch (Exception e) {
+            Logger.err("Failed to initialize SQLite storage: " + e.getMessage());
             throw new RuntimeException("Failed to initialize SQLite storage", e);
         }
     }
@@ -78,9 +80,11 @@ public class SQLiteSessionStorage implements SessionStorage {
             connection.commit();
         } catch (SQLException e) {
             rollbackQuietly();
+            Logger.err("Failed to save session " + session.getId() + ": " + e.getMessage());
             throw new RuntimeException("Failed to save session: " + session.getId(), e);
         } catch (IOException e) {
             rollbackQuietly();
+            Logger.err("Failed to serialize session " + session.getId() + ": " + e.getMessage());
             throw new RuntimeException("Failed to serialize session: " + session.getId(), e);
         }
     }
@@ -99,6 +103,7 @@ public class SQLiteSessionStorage implements SessionStorage {
             }
             return Optional.empty();
         } catch (SQLException | IOException | ClassNotFoundException e) {
+            Logger.err("Failed to load session " + id + ": " + e.getMessage());
             throw new RuntimeException("Failed to load session: " + id, e);
         }
     }
@@ -111,6 +116,7 @@ public class SQLiteSessionStorage implements SessionStorage {
             connection.commit();
         } catch (SQLException e) {
             rollbackQuietly();
+            Logger.err("Failed to delete session " + id + ": " + e.getMessage());
             throw new RuntimeException("Failed to delete session: " + id, e);
         }
     }
@@ -124,6 +130,7 @@ public class SQLiteSessionStorage implements SessionStorage {
             return count;
         } catch (SQLException e) {
             rollbackQuietly();
+            Logger.err("Failed to clean up expired sessions: " + e.getMessage());
             throw new RuntimeException("Failed to clean up expired sessions", e);
         }
     }
@@ -134,7 +141,7 @@ public class SQLiteSessionStorage implements SessionStorage {
             try {
                 connection.close();
             } catch (SQLException e) {
-                // Ignore
+                Logger.err("Failed to close SQLite connection: " + e.getMessage());
             }
         }
     }
@@ -166,6 +173,7 @@ public class SQLiteSessionStorage implements SessionStorage {
                 connection.rollback();
             }
         } catch (SQLException ex) {
+            Logger.err("Failed to rollback transaction: " + ex.getMessage());
         }
     }
 }
