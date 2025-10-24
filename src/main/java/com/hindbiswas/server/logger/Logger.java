@@ -12,49 +12,96 @@ import java.time.format.DateTimeFormatter;
 
 public class Logger {
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private static LogType logLevel = LogType.INFO;
+    private static volatile LogType logLevel = LogType.INFO;
+    private static final long MAX_LOG_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    private static final int MAX_BACKUP_FILES = 5;
+    
     private final File logFile;
-    private static final Logger INSTANCE = new Logger();
+    private final boolean enableConsole;
+    private final boolean enableFile;
+    private BufferedWriter fileWriter;
+    private final Object writeLock = new Object();
+    
+    private static volatile Logger INSTANCE = new Logger();
 
     public Logger() {
         this.logFile = null;
+        this.enableConsole = true;
+        this.enableFile = false;
+        this.fileWriter = null;
     }
 
     public Logger(String storageDir) {
-        String fileName = "server.log";
-        Path dir = Paths.get(storageDir);
-        try {
-            Files.createDirectories(dir);
-            this.logFile = dir.resolve(fileName).toFile();
-            if (!logFile.exists()) {
-                logFile.createNewFile();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to initialize session storage directory", e);
-        }
-
+        this(storageDir, true, true);
     }
 
-    public static void setLogLevel(LogType logLevel) {
+    public Logger(String storageDir, boolean enableConsole, boolean enableFile) {
+        String fileName = "server.log";
+        this.enableConsole = enableConsole;
+        this.enableFile = enableFile;
+        
+        if (enableFile) {
+            Path dir = Paths.get(storageDir);
+            try {
+                Files.createDirectories(dir);
+                this.logFile = dir.resolve(fileName).toFile();
+                if (!logFile.exists()) {
+                    logFile.createNewFile();
+                }
+                // Initialize BufferedWriter once
+                this.fileWriter = new BufferedWriter(new FileWriter(logFile, true));
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to initialize log file directory: " + storageDir, e);
+            }
+        } else {
+            this.logFile = null;
+            this.fileWriter = null;
+        }
+    }
+
+    public static synchronized void initialize(String storageDir) {
+        initialize(storageDir, true, true);
+    }
+
+    public static synchronized void initialize(String storageDir, boolean enableConsole, boolean enableFile) {
+        if (INSTANCE.logFile != null) {
+            // Close existing logger
+            INSTANCE.close();
+        }
+        INSTANCE = new Logger(storageDir, enableConsole, enableFile);
+    }
+
+    public static synchronized void setLogLevel(LogType logLevel) {
         Logger.logLevel = logLevel;
     }
 
-    private void log(LogType logType, String message, Object... args) {
+    private synchronized void log(LogType logType, String message, Object... args) {
         if (logType.ordinal() < logLevel.ordinal())
             return;
 
-        if (logFile != null) {
-            String formattedMessage = formatMessageForFile(logType, message, args);
-            writeToFile(formattedMessage);
-        } else {
-            String formattedMessage = formatMessageForConsole(logType, message, args);
+        String formattedMessageConsole = null;
+        String formattedMessageFile = null;
 
-            if (logType == LogType.ERROR)
-                System.err.print(formattedMessage);
-            else
-                System.out.print(formattedMessage);
+        if (enableConsole) {
+            formattedMessageConsole = formatMessageForConsole(logType, message, args);
+        }
+        
+        if (enableFile && logFile != null) {
+            formattedMessageFile = formatMessageForFile(logType, message, args);
         }
 
+        // Write to console
+        if (enableConsole && formattedMessageConsole != null) {
+            if (logType == LogType.ERROR)
+                System.err.print(formattedMessageConsole);
+            else
+                System.out.print(formattedMessageConsole);
+        }
+
+        // Write to file
+        if (enableFile && formattedMessageFile != null) {
+            writeToFile(formattedMessageFile);
+        }
     }
 
     private String formatMessageForConsole(LogType logType, String message, Object... args) {
@@ -75,8 +122,9 @@ public class Logger {
         sb.append(" ");
         sb.append(message);
         if (args.length > 0) {
+            String indent = "\n" + " ".repeat(30); // Dynamic spacing
             for (Object arg : args) {
-                sb.append("\n                              ");
+                sb.append(indent);
                 sb.append(arg);
             }
         }
@@ -103,8 +151,9 @@ public class Logger {
         sb.append(" ");
         sb.append(message);
         if (args.length > 0) {
+            String indent = "\n" + " ".repeat(30); // Dynamic spacing
             for (Object arg : args) {
-                sb.append("\n                              ");
+                sb.append(indent);
                 sb.append(arg);
             }
         }
@@ -114,12 +163,63 @@ public class Logger {
     }
 
     private void writeToFile(String logMessage) {
-        try (FileWriter writer = new FileWriter(logFile, true)) {
-            BufferedWriter bw = new BufferedWriter(writer);
-            bw.write(logMessage);
-            bw.flush();
+        synchronized (writeLock) {
+            try {
+                // Check if log rotation is needed
+                if (logFile.length() > MAX_LOG_FILE_SIZE) {
+                    rotateLogFile();
+                }
+                
+                if (fileWriter != null) {
+                    fileWriter.write(logMessage);
+                    fileWriter.flush();
+                }
+            } catch (IOException e) {
+                System.err.println("Failed to write to log file: " + e.getMessage());
+            }
+        }
+    }
+
+    private void rotateLogFile() {
+        try {
+            if (fileWriter != null) {
+                fileWriter.close();
+            }
+            for (int i = MAX_BACKUP_FILES - 1; i > 0; i--) {
+                File oldFile = new File(logFile.getAbsolutePath() + "." + i);
+                File newFile = new File(logFile.getAbsolutePath() + "." + (i + 1));
+                if (oldFile.exists()) {
+                    if (newFile.exists()) {
+                        newFile.delete();
+                    }
+                    oldFile.renameTo(newFile);
+                }
+            }
+
+            File backup = new File(logFile.getAbsolutePath() + ".1");
+            if (backup.exists()) {
+                backup.delete();
+            }
+            logFile.renameTo(backup);
+
+            logFile.createNewFile();
+            fileWriter = new BufferedWriter(new FileWriter(logFile, true));
+            
+            String rotationMsg = formatMessageForFile(LogType.INFO, "Log file rotated");
+            fileWriter.write(rotationMsg);
+            fileWriter.flush();
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Failed to rotate log file: " + e.getMessage());
+        }
+    }
+
+    public synchronized void close() {
+        if (fileWriter != null) {
+            try {
+                fileWriter.close();
+            } catch (IOException e) {
+                System.err.println("Failed to close log file: " + e.getMessage());
+            }
         }
     }
 

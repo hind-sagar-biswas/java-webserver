@@ -34,6 +34,8 @@ public class App {
     }
 
     public static void main(String[] args) {
+        Logger.initialize("./logs", true, true);
+        
         SessionConfig sessionConfig = new SessionConfig()
                 .setStorageType(StorageType.SQLITE)
                 .setDefaultMaxInactiveInterval(3600) // 1 hour
