@@ -1,18 +1,24 @@
 # Custom Java WebServer
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](https://github.com/hind-sagar-biswas/java-webserver/releases)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/hind-sagar-biswas/java-webserver/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://www.oracle.com/java/)
 
 A minimal yet flexible HTTP 1.1 server written from scratch in Java — no `HttpServer` or prebuilt networking classes used.
 
-> **Latest Release:** v2.0.0 (2025-10-06) - Major release with JHP Template Engine integration
+> **Latest Release:** v2.1.0 (2025-10-24) - Session Management, Cookies & Logger System
 
 ## Features
 
 * **Raw Socket Programming**: Built on `ServerSocket` and multithreaded `ConnectionHandler`
 * **HTTP Parsing**: Custom `Request` and `Response` objects
 * **Static File Serving**: Serve static files with correct MIME types via `HttpUtils`
+* **Session Management**: Complete session handling system
+  * Multiple storage backends: In-Memory, File-based, SQLite
+  * Configurable session lifecycle and cleanup
+  * Thread-safe session operations
+* **Cookie Support**: Full HTTP cookie implementation with attributes (MaxAge, Path, Domain, Secure, HttpOnly, SameSite)
+* **Logger System**: Thread-safe logging with color-coded output and multiple log levels
 * **JHP Template Engine**: Integrated JHP (Java Hypertext Preprocessor) for dynamic server-side rendering
   * Automatic `.jhp` file rendering (like Apache with PHP)
   * `Response.render()` API for programmatic rendering
@@ -51,21 +57,39 @@ A minimal yet flexible HTTP 1.1 server written from scratch in Java — no `Http
                         │   ├── ConnectionHandler.java
                         │   └── RouteHandler.java
                         ├── http
+                        │   ├── Cookie.java
                         │   ├── HttpResponse.java
                         │   ├── HttpUtils.java
                         │   ├── Request.java
                         │   └── Response.java
+                        ├── logger
+                        │   ├── Color.java
+                        │   ├── LogType.java
+                        │   ├── Logger.java
+                        │   └── TextFormatter.java
                         ├── routing
                         │   ├── AbstractMethodRouter.java
                         │   ├── ApiRouter.java
                         │   ├── HybridRouter.java
                         │   ├── Router.java
                         │   └── StaticRouter.java
+                        ├── session
+                        │   ├── Session.java
+                        │   ├── SessionConfig.java
+                        │   ├── SessionManager.java
+                        │   ├── StorageType.java
+                        │   └── storage
+                        │       ├── FileSessionStorage.java
+                        │       ├── InMemorySessionStorage.java
+                        │       ├── SQLiteSessionStorage.java
+                        │       └── SessionStorage.java
                         └── util
                             ├── CollectionUtils.java
                             ├── DateUtils.java
                             ├── HtmlUtils.java
                             ├── MathUtils.java
+                            ├── RandomUtils.java
+                            ├── SessionUtils.java
                             └── StringUtils.java
 
 ## 🏁 Getting Started
@@ -128,7 +152,7 @@ Add the Java WebServer dependency:
     <dependency>
         <groupId>com.github.hind-sagar-biswas</groupId>
         <artifactId>java-webserver</artifactId>
-        <version>2.0.0</version>
+        <version>2.1.0</version>
     </dependency>
 </dependencies>
 ```
