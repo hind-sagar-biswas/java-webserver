@@ -1,12 +1,12 @@
 # Custom Java WebServer
 
-[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](https://github.com/hind-sagar-biswas/java-webserver/releases)
+[![Version](https://img.shields.io/badge/version-2.1.1-blue.svg)](https://github.com/hind-sagar-biswas/java-webserver/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17%2B-orange.svg)](https://www.oracle.com/java/)
 
 A minimal yet flexible HTTP 1.1 server written from scratch in Java — no `HttpServer` or prebuilt networking classes used.
 
-> **Latest Release:** v2.1.0 (2025-10-24) - Session Management, Cookies & Logger System
+> **Latest Release:** v2.1.1 (2025-10-24) - Session Management, Cookies & Logger System
 
 ## Features
 
@@ -152,7 +152,7 @@ Add the Java WebServer dependency:
     <dependency>
         <groupId>com.github.hind-sagar-biswas</groupId>
         <artifactId>java-webserver</artifactId>
-        <version>2.1.0</version>
+        <version>2.1.1</version>
     </dependency>
 </dependencies>
 ```
