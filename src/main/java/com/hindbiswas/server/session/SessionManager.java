@@ -73,7 +73,7 @@ public class SessionManager {
     }
 
     public synchronized Session createSession(int maxInactiveInterval) {
-        Session session = new Session(maxInactiveInterval);
+        Session session = new Session(maxInactiveInterval, this);
         storage.save(session);
         return session;
     }

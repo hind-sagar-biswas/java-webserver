@@ -91,22 +91,24 @@ public class SessionUtils {
     };
 
     public static final SessionSet sessionSet = (key, value, scopes) -> {
-        Request request = extractRequest(scopes);
-        if (request == null)
+        Map<String, Object> sessionProxy = extractSessionProxy(scopes);
+        if (sessionProxy == null)
             return;
 
-        Session session = request.getSession();
+        String sessId = sessionProxy.get("__id") == null ? null : sessionProxy.get("__id").toString();
+        Session session = Session.getSession(sessId);
         if (session != null) {
             session.set(key, value);
         }
     };
 
     public static final SessionRemove sessionRemove = (key, scopes) -> {
-        Request request = extractRequest(scopes);
-        if (request == null)
+        Map<String, Object> sessionProxy = extractSessionProxy(scopes);
+        if (sessionProxy == null)
             return;
 
-        Session session = request.getSession();
+        String sessId = sessionProxy.get("__id") == null ? null : sessionProxy.get("__id").toString();
+        Session session = Session.getSession(sessId);
         if (session != null) {
             session.remove(key);
         }
@@ -126,11 +128,15 @@ public class SessionUtils {
     };
 
     public static final SessionInvalidate sessionInvalidate = (scopes) -> {
-        Request request = extractRequest(scopes);
-        if (request == null)
+        Map<String, Object> sessionProxy = extractSessionProxy(scopes);
+        if (sessionProxy == null)
             return;
 
-        request.invalidateSession();
+        String sessId = sessionProxy.get("__id") == null ? null : sessionProxy.get("__id").toString();
+        Session session = Session.getSession(sessId);
+        if (session != null) {
+            session.invalidate();
+        }
     };
 
     public static final SessionId sessionId = (scopes) -> {

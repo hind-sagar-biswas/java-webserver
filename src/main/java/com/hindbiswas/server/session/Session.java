@@ -10,22 +10,31 @@ import com.hindbiswas.server.util.RandomUtils;
 
 public class Session implements Serializable {
     private static final long serialVersionUID = 1L;
+    private static final Map<String, Session> instances = new ConcurrentHashMap<>();
     
     private final String id;
     private final Map<String, Object> attributes = new ConcurrentHashMap<>();
     private final long creationTime;
     private volatile long lastAccessedTime;
     private volatile int maxInactiveInterval; // in seconds
+    private volatile SessionManager manager;
 
-    public Session(int maxInactiveInterval) {
+    public Session(int maxInactiveInterval, SessionManager manager) {
         this.id = RandomUtils.ulid.apply();
         this.creationTime = System.currentTimeMillis();
         this.lastAccessedTime = this.creationTime;
         this.maxInactiveInterval = maxInactiveInterval;
+        this.manager = manager;
+
+        instances.put(this.id, this);
     }
 
-    public Session() {
-        this(1800);
+    public Session(SessionManager manager) {
+        this(1800, manager);
+    }
+
+    public static Session getSession(String id) {
+        return instances.get(id);
     }
     
     public String getId() {
@@ -49,8 +58,10 @@ public class Session implements Serializable {
     }
 
     public void invalidate() {
+        instances.remove(this.id);
         attributes.clear();
         this.maxInactiveInterval = 0; // Mark as expired
+        manager.invalidate(this.id);
     }
     
     @Override

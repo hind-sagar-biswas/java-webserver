@@ -434,9 +434,7 @@ public class Request {
         if (session == null || sessionManager == null) {
             return false;
         }
-        String sessionId = session.getId();
         session.invalidate();
-        sessionManager.invalidate(sessionId);
         session = null;
         return true;
     }
