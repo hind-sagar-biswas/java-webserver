@@ -3,10 +3,14 @@ package com.hindbiswas.server.session;
 import com.hindbiswas.server.http.Cookie;
 import com.hindbiswas.server.logger.Logger;
 import com.hindbiswas.server.session.storage.SessionStorage;
+import com.hindbiswas.server.util.RandomUtils;
 import com.hindbiswas.server.session.storage.InMemorySessionStorage;
 import com.hindbiswas.server.session.storage.FileSessionStorage;
 import com.hindbiswas.server.session.storage.SQLiteSessionStorage;
+
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -14,9 +18,12 @@ import java.nio.file.Path;
 
 
 public class SessionManager {
+    private final String id;
     private final SessionStorage storage;
     private final ScheduledExecutorService cleanupScheduler;
     private final SessionConfig config;
+
+    private final static Map<String, SessionManager> instances = new ConcurrentHashMap<>();
 
     /**
      * Constructs a SessionManager with a SessionConfig.
@@ -32,6 +39,7 @@ public class SessionManager {
         }
 
         this.config = config;
+        this.id = RandomUtils.ulid.apply();
 
         // Initialize the appropriate storage
         this.storage = createStorage(config.getStorageType(), config.getStoragePath());
@@ -44,6 +52,7 @@ public class SessionManager {
             return t;
         });
 
+        instances.put(this.id, this);
         startCleanupTask();
     }
     
@@ -66,6 +75,14 @@ public class SessionManager {
             .setStoragePath(storagePath)
             .setCleanupIntervalSeconds(cleanupIntervalSeconds)
             .setDefaultMaxInactiveInterval(defaultMaxInactiveInterval));
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public static synchronized Optional<SessionManager> getInstance(String id) {
+        return Optional.ofNullable(instances.get(id));
     }
     
     public Session createSession() {

@@ -96,6 +96,9 @@ public class SessionUtils {
             return;
 
         String sessId = sessionProxy.get("__id") == null ? null : sessionProxy.get("__id").toString();
+        if (sessId == null)
+            return;
+            
         Session session = Session.getSession(sessId);
         if (session != null) {
             session.set(key, value);
@@ -108,6 +111,9 @@ public class SessionUtils {
             return;
 
         String sessId = sessionProxy.get("__id") == null ? null : sessionProxy.get("__id").toString();
+        if (sessId == null)
+            return;
+
         Session session = Session.getSession(sessId);
         if (session != null) {
             session.remove(key);
