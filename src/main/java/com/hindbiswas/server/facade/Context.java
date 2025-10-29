@@ -62,8 +62,5 @@ public class Context extends com.hindbiswas.jhp.Context {
             
             super.add("__session", sessionProxy);
         }
-
-        // Add request object for SessionUtils and other utilities
-        super.add("__request__", req);
     }
 }

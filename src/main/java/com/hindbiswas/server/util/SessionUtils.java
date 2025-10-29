@@ -98,7 +98,7 @@ public class SessionUtils {
         String sessId = sessionProxy.get("__id") == null ? null : sessionProxy.get("__id").toString();
         if (sessId == null)
             return;
-            
+
         Session session = Session.getSession(sessId);
         if (session != null) {
             session.set(key, value);
@@ -173,26 +173,6 @@ public class SessionUtils {
             Object sess = scope.get("__session");
             if (sess instanceof Map) {
                 return (Map<String, Object>) sess;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Extracts the Request object from JHP scopes.
-     * The request is stored in the __request__ variable by Context.
-     */
-    private static Request extractRequest(Deque<Map<String, Object>> scopes) {
-        if (scopes == null || scopes.isEmpty()) {
-            return null;
-        }
-
-        // Search through scopes for __request__
-        for (Map<String, Object> scope : scopes) {
-            Object req = scope.get("__request__");
-            if (req instanceof Request) {
-                return (Request) req;
             }
         }
 
